@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import thread
 # import threading
@@ -9,6 +10,7 @@ import PySimpleGUI27 as sg
 # import mavros
 # import rospy
 from mavros import setpoint as SP
+
 from mavros.utils import *
 
 # import all mavros messages and services
@@ -73,13 +75,15 @@ class SetpointPosition:
 		self.z = _z
 		self.yaw_degrees = 0
 
-		self.activated = True
 		self.done_evt = threading.Event()
 
 		# publisher for mavros/setpoint_position/local
 		self.pub = SP.get_pub_position_local(queue_size=10)
 		# subscriber for mavros/local_position/local
 		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'pose'), SP.PoseStamped, self.reached)
+
+	def start(self):
+		self.activated = True
 
 		try:
 			thread.start_new_thread(self.navigate_position, ())
@@ -88,6 +92,7 @@ class SetpointPosition:
 
 	def finish(self):
 		self.activated = False
+		# thread.exit_thread()
 
 	def navigate_position(self):
 		msg = SP.PoseStamped(
@@ -139,76 +144,93 @@ class SetpointPosition:
 		DronePose.z = topic.pose.position.z
 setpoint_pos = SetpointPosition()
 
-# class SetpointVelocity:
-# 	"""
-# 	This class sends position targets to FCU's position controller
-# 	"""
-#
-# 	def __init__(self):
-# 		self.x = 0.0
-# 		self.y = 0.0
-# 		self.z = 0.0
-# 		self.yaw_degrees = 0
-# 		self.done_evt = threading.Event()
-#
-# 		# publisher for mavros/setpoint_position/local
-# 		self.pub = SP.get_pub_position_local(queue_size=10)
-# 		# subscriber for mavros/local_position/local
-# 		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'pose'), SP.PoseStamped, self.reached)
-#
-# 		try:
-# 			thread.start_new_thread(self.navigate_position, ())
-# 		except:
-# 			fault("Error: Unable to start thread")
-#
-# 	def navigate_position(self):
-# 		msg = SP.PoseStamped(
-# 			header=SP.Header(
-# 				frame_id="waypoint_to_go",  # no matter, plugin don't use TF
-# 				stamp=rospy.Time.now()),  # stamp should update
-# 		)
-#
-# 		while not rospy.is_shutdown():
-# 			if velocity_control_activate:
-# 				break
-#
-# 			msg.pose.position.x = self.x
-# 			msg.pose.position.y = self.y
-# 			msg.pose.position.z = self.z
-#
-# 			yaw = radians(self.yaw_degrees)
-# 			quaternion = quaternion_from_euler(0, 0, yaw)
-# 			msg.pose.orientation = SP.Quaternion(*quaternion)
-#
-# 			self.pub.publish(msg)
-# 			rate.sleep()
-#
-# 	def set(self, _x, _y, _z, delay=0, wait=False):
-# 		self.done_evt.clear()
-# 		self.x = _x
-# 		self.y = _y
-# 		self.z = _z
-#
-# 		if wait:
-# 			while not self.done_evt.is_set() and not rospy.is_shutdown():
-# 				rate.sleep()
-#
-# 		time.sleep(delay)
-#
-# 	def reached(self, topic):
-# 		def is_near(msg, _axi_1, _axi_2):
-# 			rospy.logdebug("Position %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2,
-# 			               abs(_axi_1 - _axi_2))
-# 			return abs(_axi_1 - _axi_2) < 0.3
-#
-# 		if is_near('X', topic.pose.position.x, self.x) and \
-# 				is_near('Y', topic.pose.position.y, self.y) and \
-# 				is_near('Z', topic.pose.position.z, self.z):
-# 			self.done_evt.set()
-#
-# 		DronePose.x = topic.pose.position.x
-# 		DronePose.y = topic.pose.position.y
-# 		DronePose.z = topic.pose.position.z
+class SetpointVelocity:
+	def init(self, _x, _y, _z):
+		self.x = _x
+		self.y = _y
+		self.z = _z
+		self.x_vel = 0
+		self.y_vel = 0
+		self.z_vel = 0
+
+		self.yaw_degrees = 0
+
+		self.done_evt = threading.Event()
+
+		# publisher for mavros/setpoint_position/local
+		self.pub = SP.get_pub_velocity_cmd_vel(queue_size=10)
+		# subscriber for mavros/local_position/local
+		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'velocity_local'), SP.TwistStamped, self.velocity_meter)
+
+	def start(self):
+		self.activated = True
+
+		try:
+			thread.start_new_thread(self.control_pid, ())
+		except:
+			fault("Error: Unable to start thread")
+
+	def finish(self):
+		self.activated = False
+		# thread.exit_thread()
+
+	def control_pid(self):
+		msg = SP.TwistStamped(
+			header=SP.Header(
+				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()),    # stamp should update
+		)
+
+		while not rospy.is_shutdown():
+			if not self.activated:
+				break
+
+			#todo controle PID
+
+			# msg.twist.linear.x = self.x_vel
+			self.x_vel = self.x - DronePose.x
+			msg.twist.linear.x = self.x_vel * 2
+
+			# msg.twist.linear.y = self.y_vel
+			self.y_vel = self.y - DronePose.y
+			msg.twist.linear.y = self.y_vel * 2
+
+			# msg.twist.linear.z = self.z_vel
+			self.z_vel = self.z - DronePose.z
+			msg.twist.linear.z = self.z_vel * 2
+
+			# msg.twist.angular = SP.TwistStamped.twist.angular()
+
+			self.pub.publish(msg)
+			rate.sleep()
+
+	def set(self, _x, _y, _z, delay=0, wait=False):
+		self.done_evt.clear()
+		self.x = _x
+		self.y = _y
+		self.z = _z
+
+		if wait:
+			while not self.done_evt.is_set() and not rospy.is_shutdown():
+				rate.sleep()
+
+		if delay > 0:
+			time.sleep(delay)
+
+	def velocity_meter(self, topic):
+		def is_near(msg, _axi_1, _axi_2):
+			rospy.logdebug("Velocity %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
+			return abs(_axi_1 - _axi_2) < 0.3
+
+		if is_near('X', DronePose.x, self.x) and \
+			is_near('Y', DronePose.y, self.y) and \
+			is_near('Z', DronePose.z, self.z):
+			self.done_evt.set()
+
+		DroneVel.x = topic.twist.linear.x
+		DroneVel.y = topic.twist.linear.y
+		DroneVel.z = topic.twist.linear.z
+setpoint_vel = SetpointVelocity()
 
 state = State()
 def stateCb1(msg):
@@ -235,16 +257,22 @@ if __name__ == '__main__':
 			modes.setArm(True)
 			rate.sleep()
 		
-		rospy.loginfo("initiate Pos publisher")
-		# comecar a publicar mensagens de setpoint
+		rospy.loginfo("## Iniciando modulo de controle de posição")
 		setpoint_pos.init(0.0, 0.0, 0.0)
+		setpoint_pos.start()
 
 		rospy.loginfo("Set mode to offboard")
 		modes.setMode("OFFBOARD")
-		
+
 		rospy.loginfo("Takeoff")
 		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
 
+		rospy.loginfo("## finalizando modulo de controle de posição")
+		setpoint_pos.finish()
+
+		rospy.loginfo("## Iniciando modulo de controle de velocidade")
+		setpoint_vel.init(0.0, 0.0, 2.0)
+		setpoint_vel.start()
 		# velocity_control_activate = True
 
 		_X_SIZE = 4
@@ -276,16 +304,18 @@ if __name__ == '__main__':
 				break
 
 			if event == 'UP':
-				setpoint_pos.z = setpoint_pos.z + 0.5
+				setpoint_vel.z = setpoint_vel.z + 0.5
 
 			if event == 'DOWN':
-				setpoint_pos.z = setpoint_pos.z - 0.5
+				setpoint_vel.z = setpoint_vel.z - 0.5
 
 			if event == 'SEND_YAW':
-				try:
-					setpoint_pos.yaw_degrees = int(values["YAW"])
-				except ValueError:
-					print("That's not an int, stupid!")
+				#todo how the hell i send the yaw?
+				pass
+				# try:
+				# 	setpoint_pos.yaw_degrees = int(values["YAW"])
+				# except ValueError:
+				# 	print("That's not an int, stupid!")
 
 			if not event == u'__TIMEOUT__':
 				print(event, values)
@@ -293,20 +323,20 @@ if __name__ == '__main__':
 				if not _x == None:
 					graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
 
-					setpoint_pos.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_pos.z)
+					setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_pos.z)
 
 			graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
 
 			# print(DronePose.x, DronePose.y)
 
 		rospy.loginfo("Fly home")
-		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
+		setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
 
 		rospy.loginfo("Landing")
 		# Simulate a slow landing.
-		setpoint_pos.set(0.0, 0.0, 1.0, wait=True)
-		setpoint_pos.set(0.0, 0.0, 0.0)
-		setpoint_pos.set(0.0, 0.0, -0.2)
+		setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
+		setpoint_vel.set(0.0, 0.0, 0.0)
+		setpoint_vel.set(0.0, 0.0, -0.2)
 		modes.setMode("AUTO.LAND")
 
 		rospy.loginfo("disarming")
