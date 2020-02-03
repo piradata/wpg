@@ -165,6 +165,43 @@ class SetpointVelocity:
 	def start(self):
 		self.activated = True
 
+		class ErrorObj(object):
+			def __init__(self, InitValue=0, WindUp=5):
+				self.__act = InitValue
+				self.old = InitValue
+				self.__Intg = 0
+				self.WindUp = WindUp
+
+			@property
+			def act(self):
+				return self.__act
+
+			@act.setter
+			def act(self, value):
+				self.old = self.__act
+				self.__act = value
+
+			@property
+			def Intg(self):
+				return self.__Intg
+
+			@Intg.setter
+			def Intg(self, value):
+				_sum = self.__Intg + value
+				self.__Intg = _sum if abs(_sum) < self.WindUp else self.__Intg
+
+			@property
+			def Deri(self):
+				return self.__act - self.old
+
+		class ErrorVector():
+			def __init__(self):
+				self.x = ErrorObj(WindUp=5)
+				self.y = ErrorObj(WindUp=5)
+				self.z = ErrorObj(WindUp=2)
+
+		self.error = ErrorVector()
+
 		try:
 			thread.start_new_thread(self.control_pid, ())
 		except:
@@ -186,18 +223,45 @@ class SetpointVelocity:
 				break
 
 			#todo controle PID
+			KPx = 2.0
+			KPy = 2.0
+			KPz = 2.0
 
-			# msg.twist.linear.x = self.x_vel
-			self.x_vel = self.x - DronePose.x
-			msg.twist.linear.x = self.x_vel * 2
+			KDx = 0.5
+			KDy = 0.5
+			KDz = 0.5
 
-			# msg.twist.linear.y = self.y_vel
-			self.y_vel = self.y - DronePose.y
-			msg.twist.linear.y = self.y_vel * 2
+			KIx = 0.1
+			KIy = 0.1
+			KIz = 0.1
 
-			# msg.twist.linear.z = self.z_vel
-			self.z_vel = self.z - DronePose.z
-			msg.twist.linear.z = self.z_vel * 2
+			self.error.x.act = self.x - DronePose.x
+			self.error.y.act = self.y - DronePose.y
+			self.error.z.act = self.z - DronePose.z
+
+			PX = self.error.x.act * KPx
+			PY = self.error.y.act * KPy
+			PZ = self.error.z.act * KPz
+
+			rospy.loginfo((rate.sleep_dur.nsecs / 1000000000.0))
+			DX = ((self.error.x.Deri) * float(KDx)) / (rate.sleep_dur.nsecs / 1000000000.0)
+			DY = ((self.error.y.Deri) * float(KDy)) / (rate.sleep_dur.nsecs / 1000000000.0)
+			DZ = ((self.error.z.Deri) * float(KDz)) / (rate.sleep_dur.nsecs / 1000000000.0)
+
+			self.error.x.Intg = self.error.x.act * KIx * (rate.sleep_dur.nsecs / 1000000000.0)
+			IX = self.error.x.Intg
+			self.error.y.Intg = self.error.y.act * KIy * (rate.sleep_dur.nsecs / 1000000000.0)
+			IY = self.error.y.Intg
+			self.error.z.Intg = self.error.z.act * KIz * (rate.sleep_dur.nsecs / 1000000000.0)
+			IZ = self.error.z.Intg
+
+			self.x_vel = PX + DX + IX
+			self.y_vel = PY + DY + IY
+			self.z_vel = PZ + DZ + IZ
+
+			msg.twist.linear.x = self.x_vel
+			msg.twist.linear.y = self.y_vel
+			msg.twist.linear.z = self.z_vel
 
 			# msg.twist.angular = SP.TwistStamped.twist.angular()
 
@@ -323,7 +387,7 @@ if __name__ == '__main__':
 				if not _x == None:
 					graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
 
-					setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_pos.z)
+					setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_vel.z)
 
 			graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
 

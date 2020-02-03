@@ -41,6 +41,7 @@ roslaunch gazebo_ros empty_world.launch world_name:=$(pwd)/Tools/sitl_gazebo/wor
 
 # conectando ao simulador
 rossim
+rosrun wpg ...
 
 
 # vendo nós
