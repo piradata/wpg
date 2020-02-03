@@ -196,8 +196,8 @@ class SetpointVelocity:
 
 		class ErrorVector():
 			def __init__(self):
-				self.x = ErrorObj(WindUp=5)
-				self.y = ErrorObj(WindUp=5)
+				self.x = ErrorObj(WindUp=4)
+				self.y = ErrorObj(WindUp=4)
 				self.z = ErrorObj(WindUp=2)
 
 		self.error = ErrorVector()
@@ -218,23 +218,27 @@ class SetpointVelocity:
 				stamp=rospy.Time.now()),    # stamp should update
 		)
 
+		#PID constantes
+		#2.1
+		KPx = 2.15
+		KPy = 2.15
+		KPz = 2.15
+
+		#0.4
+		KDx = 0.38
+		KDy = 0.38
+		KDz = 0.38
+
+		#0.25
+		KIx = 0.27
+		KIy = 0.27
+		KIz = 0.27		
+
 		while not rospy.is_shutdown():
 			if not self.activated:
 				break
 
 			#todo controle PID
-			KPx = 2.0
-			KPy = 2.0
-			KPz = 2.0
-
-			KDx = 0.5
-			KDy = 0.5
-			KDz = 0.5
-
-			KIx = 0.1
-			KIy = 0.1
-			KIz = 0.1
-
 			self.error.x.act = self.x - DronePose.x
 			self.error.y.act = self.y - DronePose.y
 			self.error.z.act = self.z - DronePose.z
@@ -243,7 +247,7 @@ class SetpointVelocity:
 			PY = self.error.y.act * KPy
 			PZ = self.error.z.act * KPz
 
-			rospy.loginfo((rate.sleep_dur.nsecs / 1000000000.0))
+			#rospy.loginfo((rate.sleep_dur.nsecs / 1000000000.0))
 			DX = ((self.error.x.Deri) * float(KDx)) / (rate.sleep_dur.nsecs / 1000000000.0)
 			DY = ((self.error.y.Deri) * float(KDy)) / (rate.sleep_dur.nsecs / 1000000000.0)
 			DZ = ((self.error.z.Deri) * float(KDz)) / (rate.sleep_dur.nsecs / 1000000000.0)
@@ -254,6 +258,9 @@ class SetpointVelocity:
 			IY = self.error.y.Intg
 			self.error.z.Intg = self.error.z.act * KIz * (rate.sleep_dur.nsecs / 1000000000.0)
 			IZ = self.error.z.Intg
+
+			#rospy.loginfo(PX, DX, IX, "\n", PY, DY, IY, "\n", PZ, DZ, IZ)
+			#rospy.loginfo(PX, DX, IX)
 
 			self.x_vel = PX + DX + IX
 			self.y_vel = PY + DY + IY
