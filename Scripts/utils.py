@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import thread
 # import threading
 import time
@@ -18,41 +15,54 @@ from mavros_msgs.msg import *
 from mavros_msgs.srv import *
 from tf.transformations import quaternion_from_euler
 
-gui = False
-velocity_control_activate = False
-
-#PID constantes
-#2.1
-KPx = KPy = KPz = 2.6
-# KPy = 5.15
-# KPz = 5.15
-
-#0.25
-KIx = KIy = KIz = 0.25
-# KIy = 2.3
-# KIz = 2.3
-
-#0.4
-KDx = KDy = KDz = 0.4
-# KDy = 0.6
-# KDz = 0.6
-
 
 class DronePosition:
 	def __init__(self):
 		self.x=0.0
 		self.y=0.0
 		self.z=0.0
-DronePose = DronePosition()
+
 
 class DroneVelocity:
 	def __init__(self):
 		self.x=0.0
 		self.y=0.0
 		self.z=0.0
-DroneVel = DroneVelocity()
+
+# state = State()
+# def stateCb1(msg):
+# 	global state
+# 	state= msg
+#
+# extend_state = ExtendedState()
+# def stateCb2(msg):
+# 	global extend_state
+# 	extend_state = msg
+#
+#
+# rospy.Subscriber('mavros/state', State, stateCb1)
+# rospy.Subscriber('mavros/extended_state', ExtendedState, stateCb2)
 
 class fcuModes:
+	state = State()
+	extend_state = ExtendedState()
+
+	# rospy.Subscriber('mavros/state', State, self.stateCb1)
+	# rospy.Subscriber('mavros/extended_state', ExtendedState, self.stateCb2)
+
+	@classmethod
+	def stateCb1(cls, msg):
+		cls.state = msg
+
+	@classmethod
+	def stateCb2(cls, msg):
+		cls.extend_state = msg
+
+	def __init__(self):
+		rospy.Subscriber('mavros/state', State, self.stateCb1)
+		rospy.Subscriber('mavros/extended_state', ExtendedState, self.stateCb2)
+
+
 	def setTakeoff(self):
 		rospy.wait_for_service('mavros/cmd/takeoff')
 		try:
@@ -70,6 +80,7 @@ class fcuModes:
 			print "Service arming call failed: %s"%e
 
 	def setMode(self, _mode):
+		global rate
 		if _mode in ("STABILIZED",
 					 "OFFBOARD",
 					 "ALTCTL",
@@ -78,12 +89,20 @@ class fcuModes:
 			rospy.wait_for_service('mavros/set_mode')
 			try:
 				flightModeService = rospy.ServiceProxy('mavros/set_mode', mavros_msgs.srv.SetMode)
-				while not state.mode == _mode:
+				while not self.__class__.state.mode == _mode:
 					flightModeService(custom_mode = _mode)
 					rate.sleep()
 			except rospy.ServiceException, e:
 				print "service set_mode call failed: %s. Offboard Mode could not be set." % e
-modes = fcuModes()
+
+	def wait_for_land_and_disarm(self):
+		global rate
+		while self.__class__.state.armed:
+			# print(extend_state.landed_state)
+			if self.__class__.extend_state.landed_state == 1:
+				self.setArm(False)
+			rate.sleep()
+
 
 class SetpointPosition:
 	def init(self, _x, _y, _z):
@@ -112,6 +131,7 @@ class SetpointPosition:
 		# thread.exit_thread()
 
 	def navigate_position(self):
+		global rate
 		msg = SP.PoseStamped(
 			header=SP.Header(
 				frame_id="waypoint_to_go",  # no matter, plugin don't use TF
@@ -134,6 +154,7 @@ class SetpointPosition:
 			rate.sleep()
 
 	def set(self, _x, _y, _z, delay=0, wait=False):
+		global rate
 		self.done_evt.clear()
 		self.x = _x
 		self.y = _y
@@ -147,9 +168,10 @@ class SetpointPosition:
 			time.sleep(delay)
 
 	def reached(self, topic):
+		global DronePose
 		def is_near(msg, _axi_1, _axi_2):
 			rospy.logdebug("Position %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
-			return abs(_axi_1 - _axi_2) < 0.2
+			return abs(_axi_1 - _axi_2) < 0.3
 
 		if is_near('X', topic.pose.position.x, self.x) and \
 			is_near('Y', topic.pose.position.y, self.y) and \
@@ -159,7 +181,7 @@ class SetpointPosition:
 		DronePose.x = topic.pose.position.x
 		DronePose.y = topic.pose.position.y
 		DronePose.z = topic.pose.position.z
-setpoint_pos = SetpointPosition()
+
 
 class SetpointVelocity:
 	def init(self, _x, _y, _z):
@@ -213,9 +235,9 @@ class SetpointVelocity:
 
 		class ErrorVector():
 			def __init__(self):
-				self.x = ErrorObj(WindUp=0.3)
-				self.y = ErrorObj(WindUp=0.3)
-				self.z = ErrorObj(WindUp=0.3)
+				self.x = ErrorObj(WindUp=4)
+				self.y = ErrorObj(WindUp=4)
+				self.z = ErrorObj(WindUp=2)
 
 		self.error = ErrorVector()
 
@@ -229,11 +251,28 @@ class SetpointVelocity:
 		# thread.exit_thread()
 
 	def control_pid(self):
+		global rate, DroneVel, DronePose
 		msg = SP.TwistStamped(
 			header=SP.Header(
 				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()),    # stamp should update
 		)
+
+		#PID constantes
+		#2.1
+		KPx = 2.15
+		KPy = 2.15
+		KPz = 2.15
+
+		#0.4
+		KDx = 0.38
+		KDy = 0.38
+		KDz = 0.38
+
+		#0.25
+		KIx = 0.27
+		KIy = 0.27
+		KIz = 0.27
 
 		while not rospy.is_shutdown():
 			if not self.activated:
@@ -250,8 +289,6 @@ class SetpointVelocity:
 
 			_time_bet_run = (rate.sleep_dur.nsecs / 1000000000.0)
 
-			#rospy.loginfo((rate.sleep_dur.nsecs / 1000000000.0))
-
 			DX = ((self.error.x.Deri) * float(KDx)) / _time_bet_run
 			DY = ((self.error.y.Deri) * float(KDy)) / _time_bet_run
 			DZ = ((self.error.z.Deri) * float(KDz)) / _time_bet_run
@@ -262,8 +299,6 @@ class SetpointVelocity:
 			IY = self.error.y.Intg
 			self.error.z.Intg = self.error.z.act * KIz * _time_bet_run
 			IZ = self.error.z.Intg
-
-			# rospy.loginfo((rate.sleep_dur.nsecs / 1000000000.0))
 
 			#rospy.loginfo(PX, DX, IX, "\n", PY, DY, IY, "\n", PZ, DZ, IZ)
 			#rospy.loginfo(PX, DX, IX)
@@ -277,13 +312,14 @@ class SetpointVelocity:
 			msg.twist.linear.x = self.x_vel
 			msg.twist.linear.y = self.y_vel
 			msg.twist.linear.z = self.z_vel
+
 			# msg.twist.angular = SP.TwistStamped.twist.angular()
 
-			msg.header.stamp = rospy.Time.now()
 			self.pub.publish(msg)
 			rate.sleep()
 
 	def set(self, _x, _y, _z, delay=0, wait=False):
+		global rate
 		self.done_evt.clear()
 		self.x = _x
 		self.y = _y
@@ -297,9 +333,10 @@ class SetpointVelocity:
 			time.sleep(delay)
 
 	def velocity_meter(self, topic):
+		global DronePose, DroneVel
 		def is_near(msg, _axi_1, _axi_2):
 			rospy.logdebug("Velocity %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
-			return abs(_axi_1 - _axi_2) < 0.2
+			return abs(_axi_1 - _axi_2) < 0.3
 
 		if is_near('X', DronePose.x, self.x) and \
 			is_near('Y', DronePose.y, self.y) and \
@@ -309,132 +346,12 @@ class SetpointVelocity:
 		DroneVel.x = topic.twist.linear.x
 		DroneVel.y = topic.twist.linear.y
 		DroneVel.z = topic.twist.linear.z
-setpoint_vel = SetpointVelocity()
 
 
 
-state = State()
-def stateCb1(msg):
-	global state
-	state= msg
-
-extend_state = ExtendedState()
-def stateCb2(msg):
-	global extend_state
-	extend_state = msg
 
 
-if __name__ == '__main__':
-	try:
-		rospy.init_node('waypoint_controller')
-		mavros.set_namespace()  # initialize mavros module with default namespace
-		rate = rospy.Rate(20)
 
-		rospy.Subscriber('mavros/state', State, stateCb1)
-		rospy.Subscriber('mavros/extended_state', ExtendedState, stateCb2)
 
-		rospy.loginfo("arming")
-		while not state.armed:
-			modes.setArm(True)
-			rate.sleep()
-		
-		rospy.loginfo("## Iniciando modulo de controle de posição")
-		setpoint_pos.init(0.0, 0.0, 0.0)
-		setpoint_pos.start()
 
-		rospy.loginfo("Set mode to offboard")
-		modes.setMode("OFFBOARD")
 
-		rospy.loginfo("Takeoff")
-		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
-
-		rospy.loginfo("## finalizando modulo de controle de posição")
-		setpoint_pos.finish()
-
-		rospy.loginfo("## Iniciando modulo de controle de velocidade")
-		setpoint_vel.init(0.0, 0.0, 2.0)
-		setpoint_vel.start()
-		# velocity_control_activate = True
-
-		_X_SIZE = 4
-		_Y_SIZE = 4
-
-		layout = [[sg.Graph(canvas_size=(400, 400), graph_bottom_left=(-200, -200), graph_top_right=(200, 200), background_color='red', key='graph', enable_events=True, drag_submits=True)],
-		          [sg.Button("land", key="LAND"), sg.Button("go up", key="UP"), sg.Button("go down", key="DOWN")],
-		          [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")],
-		          [sg.InputText("0", size=(10,10), tooltip="K_P", key="K_P"), sg.InputText("0", size=(10,10), tooltip="K_I", key="K_I"), sg.InputText("0", size=(10,10), tooltip="K_D", key="K_D"), sg.Button("SEND_PID", key="SEND_PID")]]
-		window = sg.Window('Drone control view', layout, finalize=True)
-		graph = window['graph']
-
-		oval1 = graph.draw_oval((-5, 0), (5, 50), fill_color='purple', line_color='purple')
-		oval3 = graph.draw_oval((0, 5), (50, -5), fill_color='purple', line_color='purple')
-		oval2 = graph.draw_oval((5, 0), (-5, -50), fill_color='blue', line_color='blue')
-		oval4 = graph.draw_oval((0, -5), (-50, 5), fill_color='blue', line_color='blue')
-		circleSize = 15
-		circle = graph.draw_circle((0, 0), circleSize, fill_color='black', line_color='green')
-
-		pointSize = 10
-		point = graph.draw_point([0, 0], pointSize, color='green')
-
-		gui = True
-
-		while(True):
-			try:
-				event, values = window.Read(timeout=100)
-				# print(event, values)
-
-				if event in (None, 'LAND'):
-					break
-
-				if event == 'UP':
-					setpoint_vel.z = setpoint_vel.z + 0.5
-
-				if event == 'DOWN':
-					setpoint_vel.z = setpoint_vel.z - 0.5
-
-				if event == 'SEND_YAW':
-					#todo how the hell i send the yaw?
-					pass
-					# try:
-					# 	setpoint_pos.yaw_degrees = int(values["YAW"])
-					# except ValueError:
-					# 	print("That's not an int, stupid!")
-
-				if event == 'SEND_PID':
-					KPx = KPy = KPz = float(values["K_P"])
-					KIx = KIy = KIz = float(values["K_I"])
-					KDx = KDy = KDz = float(values["K_D"])
-
-				if not event == u'__TIMEOUT__':
-					print(event, values)
-					_x, _y = values["graph"]
-					if not _x == None:
-						graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
-
-						setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_vel.z)
-
-				graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
-			except KeyboardInterrupt:
-				pass
-
-		rospy.loginfo("Fly home")
-		setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
-
-		rospy.loginfo("Landing")
-		# Simulate a slow landing.
-		setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
-		setpoint_vel.set(0.0, 0.0, 0.0)
-		setpoint_vel.set(0.0, 0.0, -0.1)
-		modes.setMode("AUTO.LAND")
-
-		rospy.loginfo("disarming")
-		while state.armed:
-			# print(extend_state.landed_state)
-			if extend_state.landed_state == 1:
-				modes.setArm(False)
-			rate.sleep()
-
-		setpoint_vel.finish()
-		rospy.loginfo("Bye!")
-	except rospy.ROSInterruptException:
-		pass

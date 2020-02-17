@@ -21,23 +21,6 @@ from tf.transformations import quaternion_from_euler
 gui = False
 velocity_control_activate = False
 
-#PID constantes
-#2.1
-KPx = KPy = KPz = 2.6
-# KPy = 5.15
-# KPz = 5.15
-
-#0.25
-KIx = KIy = KIz = 0.25
-# KIy = 2.3
-# KIz = 2.3
-
-#0.4
-KDx = KDy = KDz = 0.4
-# KDy = 0.6
-# KDz = 0.6
-
-
 class DronePosition:
 	def __init__(self):
 		self.x=0.0
@@ -149,7 +132,7 @@ class SetpointPosition:
 	def reached(self, topic):
 		def is_near(msg, _axi_1, _axi_2):
 			rospy.logdebug("Position %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
-			return abs(_axi_1 - _axi_2) < 0.2
+			return abs(_axi_1 - _axi_2) < 0.3
 
 		if is_near('X', topic.pose.position.x, self.x) and \
 			is_near('Y', topic.pose.position.y, self.y) and \
@@ -213,9 +196,9 @@ class SetpointVelocity:
 
 		class ErrorVector():
 			def __init__(self):
-				self.x = ErrorObj(WindUp=0.3)
-				self.y = ErrorObj(WindUp=0.3)
-				self.z = ErrorObj(WindUp=0.3)
+				self.x = ErrorObj(WindUp=4)
+				self.y = ErrorObj(WindUp=4)
+				self.z = ErrorObj(WindUp=2)
 
 		self.error = ErrorVector()
 
@@ -234,6 +217,22 @@ class SetpointVelocity:
 				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()),    # stamp should update
 		)
+
+		#PID constantes
+		#2.1
+		KPx = 2.15
+		KPy = 2.15
+		KPz = 2.15
+
+		#0.4
+		KDx = 0.38
+		KDy = 0.38
+		KDz = 0.38
+
+		#0.25
+		KIx = 0.27
+		KIy = 0.27
+		KIz = 0.27		
 
 		while not rospy.is_shutdown():
 			if not self.activated:
@@ -277,9 +276,9 @@ class SetpointVelocity:
 			msg.twist.linear.x = self.x_vel
 			msg.twist.linear.y = self.y_vel
 			msg.twist.linear.z = self.z_vel
+
 			# msg.twist.angular = SP.TwistStamped.twist.angular()
 
-			msg.header.stamp = rospy.Time.now()
 			self.pub.publish(msg)
 			rate.sleep()
 
@@ -299,7 +298,7 @@ class SetpointVelocity:
 	def velocity_meter(self, topic):
 		def is_near(msg, _axi_1, _axi_2):
 			rospy.logdebug("Velocity %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
-			return abs(_axi_1 - _axi_2) < 0.2
+			return abs(_axi_1 - _axi_2) < 0.3
 
 		if is_near('X', DronePose.x, self.x) and \
 			is_near('Y', DronePose.y, self.y) and \
@@ -310,8 +309,6 @@ class SetpointVelocity:
 		DroneVel.y = topic.twist.linear.y
 		DroneVel.z = topic.twist.linear.z
 setpoint_vel = SetpointVelocity()
-
-
 
 state = State()
 def stateCb1(msg):
@@ -348,21 +345,12 @@ if __name__ == '__main__':
 		rospy.loginfo("Takeoff")
 		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
 
-		rospy.loginfo("## finalizando modulo de controle de posição")
-		setpoint_pos.finish()
-
-		rospy.loginfo("## Iniciando modulo de controle de velocidade")
-		setpoint_vel.init(0.0, 0.0, 2.0)
-		setpoint_vel.start()
-		# velocity_control_activate = True
-
 		_X_SIZE = 4
 		_Y_SIZE = 4
 
 		layout = [[sg.Graph(canvas_size=(400, 400), graph_bottom_left=(-200, -200), graph_top_right=(200, 200), background_color='red', key='graph', enable_events=True, drag_submits=True)],
 		          [sg.Button("land", key="LAND"), sg.Button("go up", key="UP"), sg.Button("go down", key="DOWN")],
-		          [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")],
-		          [sg.InputText("0", size=(10,10), tooltip="K_P", key="K_P"), sg.InputText("0", size=(10,10), tooltip="K_I", key="K_I"), sg.InputText("0", size=(10,10), tooltip="K_D", key="K_D"), sg.Button("SEND_PID", key="SEND_PID")]]
+		          [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")]]
 		window = sg.Window('Drone control view', layout, finalize=True)
 		graph = window['graph']
 
@@ -379,52 +367,46 @@ if __name__ == '__main__':
 		gui = True
 
 		while(True):
-			try:
-				event, values = window.Read(timeout=100)
-				# print(event, values)
+			event, values = window.Read(timeout=100)
+			# print(event, values)
 
-				if event in (None, 'LAND'):
-					break
+			if event in (None, 'LAND'):
+				break
 
-				if event == 'UP':
-					setpoint_vel.z = setpoint_vel.z + 0.5
+			if event == 'UP':
+				setpoint_pos.z = setpoint_pos.z + 0.5
 
-				if event == 'DOWN':
-					setpoint_vel.z = setpoint_vel.z - 0.5
+			if event == 'DOWN':
+				setpoint_pos.z = setpoint_pos.z - 0.5
 
-				if event == 'SEND_YAW':
-					#todo how the hell i send the yaw?
-					pass
-					# try:
-					# 	setpoint_pos.yaw_degrees = int(values["YAW"])
-					# except ValueError:
-					# 	print("That's not an int, stupid!")
-
-				if event == 'SEND_PID':
-					KPx = KPy = KPz = float(values["K_P"])
-					KIx = KIy = KIz = float(values["K_I"])
-					KDx = KDy = KDz = float(values["K_D"])
-
-				if not event == u'__TIMEOUT__':
-					print(event, values)
-					_x, _y = values["graph"]
-					if not _x == None:
-						graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
-
-						setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_vel.z)
-
-				graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
-			except KeyboardInterrupt:
+			if event == 'SEND_YAW':
+				#todo how the hell i send the yaw?
 				pass
+				# try:
+				# 	setpoint_pos.yaw_degrees = int(values["YAW"])
+				# except ValueError:
+				# 	print("That's not an int, stupid!")
+
+			if not event == u'__TIMEOUT__':
+				print(event, values)
+				_x, _y = values["graph"]
+				if not _x == None:
+					graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
+
+					setpoint_pos.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_pos.z)
+
+			graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
+
+			# print(DronePose.x, DronePose.y)
 
 		rospy.loginfo("Fly home")
-		setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
+		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
 
 		rospy.loginfo("Landing")
 		# Simulate a slow landing.
-		setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
-		setpoint_vel.set(0.0, 0.0, 0.0)
-		setpoint_vel.set(0.0, 0.0, -0.1)
+		setpoint_pos.set(0.0, 0.0, 1.0, wait=True)
+		setpoint_pos.set(0.0, 0.0, 0.0)
+		setpoint_pos.set(0.0, 0.0, -0.2)
 		modes.setMode("AUTO.LAND")
 
 		rospy.loginfo("disarming")
@@ -434,7 +416,6 @@ if __name__ == '__main__':
 				modes.setArm(False)
 			rate.sleep()
 
-		setpoint_vel.finish()
 		rospy.loginfo("Bye!")
 	except rospy.ROSInterruptException:
 		pass
