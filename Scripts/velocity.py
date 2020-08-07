@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import thread
-# import threading
-import time
 from math import *
-
-import PySimpleGUI27 as sg
-# import mavros
-# import rospy
-from mavros import setpoint as SP
-
 from mavros.utils import *
-
-# import all mavros messages and services
 from mavros_msgs.msg import *
 from mavros_msgs.srv import *
+
+from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
+
+import PySimpleGUI27 as sg
+import thread
+import time
+
+
 
 gui = False
 velocity_control_activate = False
