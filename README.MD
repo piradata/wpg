@@ -28,11 +28,12 @@ sudo pip2 install typing
 
 
 # iniciando simulação
-# para modificar o mundo mude o arquivo /Tools/sitl_gazebo/worlds/iris.world
-# export PX4_HOME_LAT=0.0
-# export PX4_HOME_LON=0.0
-# export PX4_HOME_ALT=0.0
-# export PX4_SIM_SPEED_FACTOR=1
+para modificar o mundo mude o arquivo /Tools/sitl_gazebo/worlds/iris.world
+export PX4_HOME_LAT=0.0
+export PX4_HOME_LON=0.0
+export PX4_HOME_ALT=0.0
+export PX4_SIM_SPEED_FACTOR=1
+
 cdpx4
 makepx4
 cdpx4
@@ -91,7 +92,3 @@ rosservice call /mavros/set_stream_rate 0 10 1
 editar mundo iris para ter um chao decente
 /home/guilherme/catkin_ws/src/mavros/test_mavros/launch/px4/iris_empty_world_offboard_ctl.launch
 /home/guilherme/src/Firmware/Tools/sitl_gazebo/worlds/iris.world
-
-ler esse arquivo para ter uma ideia de como fazer o pid pq a porra da velocidade está matando o controle de posição
-/home/guilherme/catkin_ws/src/mavros/test_mavros/launch/px4/iris_empty_world_offboard_ctl.launch
-
