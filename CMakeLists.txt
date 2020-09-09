@@ -14,11 +14,18 @@ find_package(catkin REQUIRED COMPONENTS
   libmavconn
   mavros
   mavros_msgs
+  message_generation
 )
 
 
 catkin_package(
-   CATKIN_DEPENDS geometry_msgs std_msgs
+  CATKIN_DEPENDS geometry_msgs std_msgs message_runtime
+)
+
+
+add_message_files(
+  FILES
+  fuzzy.msg
 )
 
 
