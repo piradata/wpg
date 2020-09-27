@@ -18,14 +18,20 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-catkin_package(
-  CATKIN_DEPENDS geometry_msgs std_msgs message_runtime
-)
-
-
 add_message_files(
   FILES
   fuzzy.msg
+  defuzzyfied.msg
+)
+
+
+generate_messages(
+  DEPENDENCIES std_msgs
+)
+
+
+catkin_package(
+  CATKIN_DEPENDS geometry_msgs std_msgs message_runtime
 )
 
 

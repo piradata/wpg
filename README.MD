@@ -1,6 +1,6 @@
 #aliases:
 alias cdpx4="cd ~/src/Firmware"
-alias makepx4="no_sim=1 make px4_sitl_default gazebo"
+alias makepx4="sudo make no_sim=1 px4_sitl_default gazebo"
 alias gazset="source Tools/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default"
 alias gazinit="roslaunch gazebo_ros empty_world.launch world_name:=$(pwd)/Tools/sitl_gazebo/worlds/iris.world"
 alias rossim="roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'"
@@ -84,6 +84,12 @@ roslaunch mavros px4.launch fcu_url:=/dev/ttyUSB0:57600
 
 # pega dados da fcu real para o mavros
 rosservice call /mavros/set_stream_rate 0 10 1
+
+# configura mensagens personalizadas no matlab
+folderpath = fullfile('~/catkin_ws','src')
+rosgenmsg(folderpath)
+addpath('/home/piradata/catkin_ws/src/matlab_gen/msggen')
+savepath
 
 # gazebo help
 # https://github.com/ArduPilot/ardupilot_wiki/issues/1001
