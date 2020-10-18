@@ -24,7 +24,7 @@ KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
 
 # non-brutness of fuzzy
-SOFTNESS = 5
+SOFTNESS = 50
 
 class DronePosition:
 	def __init__(self):
@@ -280,15 +280,18 @@ class SetpointVelocity:
 			if self.fuzzyfy:
 				#todo fuzzy com y e z
 				rospy.loginfo_once("initalized fuzzyfication for the fist time")
-				if self.defuzzed.P_X == 0:
+				if not self.defuzzed.P_X == 0:
 					rospy.loginfo_once("primeiro valor de P_X modificado pelo sistema fuzzy")
 					rospy.loginfo_once("P_x = " + str(self.defuzzed.P_X))
 				global KPx
 				KPx += self.defuzzed.P_X/SOFTNESS
+				if KPx <=0: KPx=0
 				global KIx
 				KIx += self.defuzzed.I_X/SOFTNESS
+				if KIx <= 0: KIx = 0
 				global KDx
 				KDx += self.defuzzed.D_X/SOFTNESS
+				if KDx <= 0: KDx = 0
 
 			self.error.x.act = self.x - DronePose.x
 			self.error.y.act = self.y - DronePose.y
@@ -513,6 +516,7 @@ if __name__ == '__main__':
 			rate.sleep()
 
 		setpoint_vel.finish()
+		rospy.sleep(1)
 		rospy.loginfo("Bye! XD")
 	except rospy.ROSInterruptException:
 		rospy.loginfo("Don't kill me this way please!! I may be a robot but have feelings );")

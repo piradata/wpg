@@ -1,3 +1,16 @@
+#resumo
+
+cd ~/src/Firmware
+
+sudo make px4_sitl_default gazebo_iris PX4_SITL_WORLD:=$(pwd)/Tools/sitl_gazebo/worlds/uneven.world
+
+roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'
+
+rosrun wpg fuzzy_v.py
+
+rosrun rqt_graph rqt_graph 
+
+
 #aliases:
 alias cdpx4="cd ~/src/Firmware"
 alias makepx4="sudo make no_sim=1 px4_sitl_default gazebo"
@@ -37,6 +50,7 @@ export PX4_SIM_SPEED_FACTOR=1
 cdpx4
 makepx4
 cdpx4
+
 source Tools/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
 roslaunch gazebo_ros empty_world.launch world_name:=$(pwd)/Tools/sitl_gazebo/worlds/iris.world
 
@@ -45,8 +59,9 @@ OU
 sudo make px4_sitl_default gazebo_iris PX4_SITL_WORLD:=$(pwd)/Tools/sitl_gazebo/worlds/uneven.world
 # conectando ao simulador
 rossim
-rosrun wpg ...
 
+# rodando codigos
+rosrun wpg ...
 
 # vendo nós
 rosrun rqt_graph rqt_graph
