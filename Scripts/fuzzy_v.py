@@ -285,13 +285,16 @@ class SetpointVelocity:
 					rospy.loginfo_once("P_x = " + str(self.defuzzed.P_X))
 				global KPx
 				KPx += self.defuzzed.P_X/SOFTNESS
-				if KPx <=0: KPx=0
+				if KPx <=0.6: KPx=0.6
+				if KPx >=5.6: KPx=5.6
 				global KIx
 				KIx += self.defuzzed.I_X/SOFTNESS
-				if KIx <= 0: KIx = 0
+				if KIx <= 0.3: KIx = 0.3
+				if KIx >= 4.5: KIx = 4.5
 				global KDx
 				KDx += self.defuzzed.D_X/SOFTNESS
-				if KDx <= 0: KDx = 0
+				if KDx <= 0.1: KDx = 0.1
+				if KDx >= 0.8: KDx = 0.8
 
 			self.error.x.act = self.x - DronePose.x
 			self.error.y.act = self.y - DronePose.y
