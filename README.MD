@@ -8,7 +8,9 @@ roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'
 
 rosrun wpg fuzzy_v.py
 
-rosrun rqt_graph rqt_graph 
+rosrun rqt_graph rqt_graph
+
+rostopic echo ...
 
 
 #aliases:
