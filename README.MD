@@ -107,6 +107,8 @@ folderpath = fullfile('~/catkin_ws','src')
 rosgenmsg(folderpath)
 addpath('/home/piradata/catkin_ws/src/matlab_gen/msggen')
 savepath
+REINICIAR MATLAB
+rosmsg list
 
 # gazebo help
 # https://github.com/ArduPilot/ardupilot_wiki/issues/1001
@@ -115,6 +117,6 @@ savepath
 # criar script python ou cpp no ros e ativa-lo
 
 
-editar mundo iris para ter um chao decente
+# editar mundo iris para ter um chão decente
 /home/guilherme/catkin_ws/src/mavros/test_mavros/launch/px4/iris_empty_world_offboard_ctl.launch
 /home/guilherme/src/Firmware/Tools/sitl_gazebo/worlds/iris.world
