@@ -2,10 +2,10 @@
 %PD = rosbag("PD_3_0.08.bag");
 %PI = rosbag("PI_3.2_0.95.bag");
 %PID1 = rosbag("PID_2.60_0.25_0.40.bag");
-%PID2 = rosbag("PID_3.255_4.912_0.565.bag");
-%REAL = rosbag("oitoGB.bag");
+BAG = rosbag('ter.bag');
+%BAG = rosbag('DuzzyCorr.bag');
 
-BAG = PID2;
+
 titulo = "teste com controlador PID";
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -14,10 +14,12 @@ titulo = "teste com controlador PID";
 topic_pos = select(BAG, 'Topic', '/mavros/local_position/pose');
 topic_vel2 = select(BAG, 'Topic', '/mavros/local_position/velocity_local');
 topic_ref_vel = select(BAG, 'Topic', '/mavros/setpoint_velocity/cmd_vel');
+topic_fuz = select(BAG, 'Topic', '/wpg/fuzzy_values');
 
 data_pos = readMessages(topic_pos,'DataFormat','struct');
 data_vel2 = readMessages(topic_vel2,'DataFormat','struct');
 data_ref_vel = readMessages(topic_ref_vel,'DataFormat','struct');
+data_fuz = readMessages(topic_fuz,'DataFormat','struct');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 xPoints = cellfun(@(m) double(m.Pose.Position.X),data_pos);
@@ -44,43 +46,45 @@ velreftimeSecPoints = cellfun(@(m) double(m.Header.Stamp.Sec),data_ref_vel);
 velreftime = (velreftimeNsecPoints./1000000000 + velreftimeSecPoints);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(4, 1, 1)
+refxPoints = cellfun(@(m) double(m.Twist.Linear.X),data_ref_vel);
+refyPoints = cellfun(@(m) double(m.Twist.Linear.Y),data_ref_vel);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(3, 1, 1)
 xlabel('x-axis')
 xlim([0 inf]) 
 plot(ptime - BAG.StartTime, xPoints,'DisplayName','X position');
 hold on
 plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
-plot(ptime - BAG.StartTime, zPoints,'DisplayName','Z position');
+%plot(ptime - BAG.StartTime, zPoints,'DisplayName','Z position');
 xlim([0 inf]) 
 title('Posição')
 hold off
 legend
 
-subplot(4, 1, 2)
+subplot(3, 1, 2)
 plot(veltime - BAG.StartTime, xvelPoints,'DisplayName','X Velocity');
 hold on
 plot(velreftime - BAG.StartTime, xvelrefPoints,'DisplayName','X Velocity REF');
 xlim([0 inf]) 
-title('Velocidade em X')
+title('Xvel')
 hold off
 legend
 
-subplot(4, 1, 3)
+subplot(3, 1, 3)
 plot(veltime - BAG.StartTime, yvelPoints,'DisplayName','Y Velocity');
 hold on
 plot(velreftime - BAG.StartTime, yvelrefPoints,'DisplayName','Y Velocity REF');
 xlim([0 inf]) 
-title('Velocidade em Y')
+title('Yvel')
 hold off
 legend
 
-subplot(4, 1, 4)
-plot(veltime - BAG.StartTime, zvelPoints,'DisplayName','Z Velocity');
-hold on
-plot(velreftime - BAG.StartTime, zvelrefPoints,'DisplayName','Z Velocity REF');
-xlim([0 inf]) 
-title('Velocidade em Z')
-hold off
-legend
-
-sgtitle(titulo)
+%subplot(4, 1, 4)
+%plot(veltime - BAG.StartTime, zvelPoints,'DisplayName','Z Velocity');
+%hold on
+%plot(velreftime - BAG.StartTime, zvelrefPoints,'DisplayName','Z Velocity REF');
+%xlim([0 inf]) 
+%title('Velocidade em Z')
+%hold off
+%legend
