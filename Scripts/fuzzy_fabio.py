@@ -199,6 +199,7 @@ class SetpointVelocity:
 				self.__act = InitValue
 				self.old = InitValue
 				self.__Intg = 0
+				self.__Deri = 0
 				self.WindUp = WindUp
 
 			@property
@@ -221,11 +222,14 @@ class SetpointVelocity:
 
 			@property
 			def Deri(self):
-				return self.__act - self.old
+				self.__Deri = self.__act - self.old
+				return self.__Deri
 
 			@property
 			def Deri2(self):
-				return abs(self.__act) - abs(self.old)
+				if self.__act != self.old:
+					self.__Deri = abs(self.__act) - abs(self.old)
+				return self.__Deri
 
 		class ErrorVector():
 			def __init__(self):
@@ -315,9 +319,9 @@ class SetpointVelocity:
 
 			_time_bet_run = (rate.sleep_dur.nsecs / 1000000000.0)
 
-			DX = ((self.error.x.Deri) * float(KDx)) / _time_bet_run
-			DY = ((self.error.y.Deri) * float(KDy)) / _time_bet_run
-			DZ = ((self.error.z.Deri) * float(KDz)) / _time_bet_run
+			DX = ((self.error.x.Deri2) * float(KDx)) / _time_bet_run
+			DY = ((self.error.y.Deri2) * float(KDy)) / _time_bet_run
+			DZ = ((self.error.z.Deri2) * float(KDz)) / _time_bet_run
 
 			self.error.x.Intg = self.error.x.act * KIx * _time_bet_run
 			IX = self.error.x.Intg
