@@ -91,9 +91,9 @@ class SetpointPosition:
 		self.done_evt = threading.Event()
 
 		# publisher for mavros/setpoint_position/local
-		self.pub = SP.get_pub_position_local(queue_size=10)
+		self.pub_setpoint = SP.get_pub_position_local(queue_size=10)
 		# subscriber for mavros/local_position/local
-		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'pose'), SP.PoseStamped, self.reached)
+		self.sub_pose = rospy.Subscriber(mavros.get_topic('local_position', 'pose'), SP.PoseStamped, self.reached)
 
 	def start(self):
 		self.activated = True
@@ -128,7 +128,7 @@ class SetpointPosition:
 
 			# rospy.loginfo("there is life on navigate")
 
-			self.pub.publish(msg)
+			self.pub_setpoint.publish(msg)
 			rate.sleep()
 
 	def set(self, _x, _y, _z, delay=0, wait=False):
@@ -185,9 +185,9 @@ class SetpointVelocity:
 		# publisher for reference position (ploting reasons)
 		self.pub_refpos = rospy.Publisher('reference_pos', SP.PoseStamped, queue_size=10)
 		# publisher for mavros/setpoint_position/local
-		self.pub = SP.get_pub_velocity_cmd_vel(queue_size=10)
+		self.pub_setpoint = SP.get_pub_velocity_cmd_vel(queue_size=10)
 		# subscriber for mavros/local_position/local
-		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'velocity_local'), SP.TwistStamped, self.velocity_meter)
+		self.sub_vel = rospy.Subscriber(mavros.get_topic('local_position', 'velocity_local'), SP.TwistStamped, self.velocity_meter)
 
 		# publisher for smc gains
 		self.pub_smc = rospy.Publisher('smc_values', vehicle_smc_gains_msg, queue_size=10)
@@ -270,7 +270,7 @@ class SetpointVelocity:
 		self.activated = False
 
 	def control_pid(self):
-		msg = SP.TwistStamped(
+		setpoint_msg = SP.TwistStamped(
 			header=SP.Header(
 				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()
@@ -307,7 +307,7 @@ class SetpointVelocity:
 				rospy.loginfo_once("initalized fuzzyfication for the fist time")
 				if not self.defuzzed.P_X == 0:
 					rospy.loginfo_once("first value of P_X modified by fuzzy system")
-					rospy.loginfo_once("P_x = " + str(self.defuzzed.P_X))
+					rospy.loginfo_once(f"P_x = {str(self.defuzzed.P_X)}")
 				global KPx
 				KPx += self.defuzzed.P_X/SOFTNESS
 				if KPx <=0.6: KPx=0.6
@@ -324,8 +324,6 @@ class SetpointVelocity:
 			self.error.x.act = self.x - DronePose.x
 			self.error.y.act = self.y - DronePose.y
 			self.error.z.act = self.z - DronePose.z
-
-			# rospy.loginfo(KPx)
 
 			PX = self.error.x.act * KPx
 			PY = self.error.y.act * KPy
@@ -344,8 +342,6 @@ class SetpointVelocity:
 			self.error.z.Intg = self.error.z.act * KIz * _time_bet_run
 			IZ = self.error.z.Intg
 
-			# rospy.loginfo(IY)
-
 			self.x_vel = PX + DX + IX
 			self.y_vel = PY + DY + IY
 			self.z_vel = PZ + DZ + IZ
@@ -360,9 +356,9 @@ class SetpointVelocity:
 			ref_pose_msg.pose.position.y = setpoint_vel.y
 			ref_pose_msg.pose.position.z = setpoint_vel.z
 
-			msg.twist.linear.x = self.x_vel
-			msg.twist.linear.y = self.y_vel
-			msg.twist.linear.z = self.z_vel
+			setpoint_msg.twist.linear.x = self.x_vel
+			setpoint_msg.twist.linear.y = self.y_vel
+			setpoint_msg.twist.linear.z = self.z_vel
 
 			smc_msg.k_gains = K_roll, K_pitch, K_yaw
 			smc_msg.beta_gains = B_roll, B_pitch, B_yaw
@@ -374,8 +370,8 @@ class SetpointVelocity:
 			ref_pose_msg.header.stamp = rospy.Time.now()
 			self.pub_refpos.publish(ref_pose_msg)
 
-			msg.header.stamp = rospy.Time.now()
-			self.pub.publish(msg)
+			setpoint_msg.header.stamp = rospy.Time.now()
+			self.pub_setpoint.publish(setpoint_msg)
 
 			smc_msg.header.stamp = rospy.Time.now()
 			self.pub_smc.publish(smc_msg)
