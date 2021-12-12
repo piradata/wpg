@@ -37,38 +37,6 @@ SOFTNESS = 50
 # default reaching distance
 DEFAULT_REACH_DIST = 0.2
 
-# message definitions
-msg_set_pos = SP.PoseStamped(
-	header=SP.Header(
-		frame_id="waypoint_to_go",  # no matter, plugin don't use TF
-		stamp=rospy.Time.now()
-	),    # stamp should update
-)
-msg_set_vel = SP.TwistStamped(
-	header=SP.Header(
-		frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
-		stamp=rospy.Time.now()
-	),    # stamp should update
-)
-ref_pose_msg = SP.PoseStamped(
-	header=SP.Header(
-		frame_id="setpoint_position",  # no matter, plugin don't use TF
-		stamp=rospy.Time.now()
-	),  # stamp should update
-)
-fuz_msg = fuzzy_msg(
-	header=SP.Header(
-		frame_id="fuzzy_values",  # no matter, plugin don't use TF
-		stamp=rospy.Time.now()
-	),  # stamp should update
-)
-smc_msg = vehicle_smc_gains_msg(
-	header=SP.Header(
-		frame_id="smc_values",  # no matter, plugin don't use TF
-		stamp=rospy.Time.now()
-	),  # stamp should update
-)
-
 class DronePosition:
 	def __init__(self):
 		self.x=0.0
@@ -142,6 +110,12 @@ class SetpointPosition:
 		# thread.exit_thread()
 
 	def navigate_position(self):
+		msg_set_pos = SP.PoseStamped(
+			header=SP.Header(
+				frame_id="waypoint_to_go",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),    # stamp should update
+		)
 		while not rospy.is_shutdown():
 			if not self.activated:
 				break
@@ -198,7 +172,6 @@ class SetpointVelocity:
 		self.y_vel = 0
 		self.z_vel = 0
 
-		
 		self.reaching_distance = DEFAULT_REACH_DIST
 
 		self.yaw_degrees = 0
@@ -298,6 +271,30 @@ class SetpointVelocity:
 		self.activated = False
 
 	def control_pid(self):
+		msg_set_vel = SP.TwistStamped(
+			header=SP.Header(
+				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),    # stamp should update
+		)
+		ref_pose_msg = SP.PoseStamped(
+			header=SP.Header(
+				frame_id="setpoint_position",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),  # stamp should update
+		)
+		fuz_msg = fuzzy_msg(
+			header=SP.Header(
+				frame_id="fuzzy_values",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),  # stamp should update
+		)
+		smc_msg = vehicle_smc_gains_msg(
+			header=SP.Header(
+				frame_id="smc_values",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),  # stamp should update
+		)
 		while not rospy.is_shutdown():
 			if not self.activated:
 				break
