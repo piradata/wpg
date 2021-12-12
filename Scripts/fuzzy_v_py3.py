@@ -283,7 +283,7 @@ class SetpointVelocity:
 				stamp=rospy.Time.now()
 			),  # stamp should update
 		)
-		vehicle_smc_gains_msg = vehicle_smc_gains_msg(
+		smc_msg = vehicle_smc_gains_msg(
 			header=SP.Header(
 				frame_id="smc_values",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()),  # stamp should update
@@ -355,9 +355,9 @@ class SetpointVelocity:
 			msg.twist.linear.y = self.y_vel
 			msg.twist.linear.z = self.z_vel
 
-			vehicle_smc_gains_msg.k_gains = K_roll, K_pitch, K_yaw
-			vehicle_smc_gains_msg.beta_gains = B_roll, B_pitch, B_yaw
-			vehicle_smc_gains_msg.lambda_gains = L_roll, L_pitch, L_yaw
+			smc_msg.k_gains = K_roll, K_pitch, K_yaw
+			smc_msg.beta_gains = B_roll, B_pitch, B_yaw
+			smc_msg.lambda_gains = L_roll, L_pitch, L_yaw
 
 			fuz_msg.header.stamp = rospy.Time.now()
 			self.pub_fuz.publish(fuz_msg)
@@ -368,8 +368,8 @@ class SetpointVelocity:
 			msg.header.stamp = rospy.Time.now()
 			self.pub.publish(msg)
 
-			vehicle_smc_gains_msg.header.stamp = rospy.Time.now()
-			self.pub_smc.publish(vehicle_smc_gains_msg)
+			smc_msg.header.stamp = rospy.Time.now()
+			self.pub_smc.publish(smc_msg)
 
 			rate.sleep()
 
