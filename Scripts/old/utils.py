@@ -29,26 +29,9 @@ class DroneVelocity:
 		self.y=0.0
 		self.z=0.0
 
-# state = State()
-# def stateCb1(msg):
-# 	global state
-# 	state= msg
-#
-# extend_state = ExtendedState()
-# def stateCb2(msg):
-# 	global extend_state
-# 	extend_state = msg
-#
-#
-# rospy.Subscriber('mavros/state', State, stateCb1)
-# rospy.Subscriber('mavros/extended_state', ExtendedState, stateCb2)
-
 class fcuModes:
 	state = State()
 	extend_state = ExtendedState()
-
-	# rospy.Subscriber('mavros/state', State, self.stateCb1)
-	# rospy.Subscriber('mavros/extended_state', ExtendedState, self.stateCb2)
 
 	@classmethod
 	def stateCb1(cls, msg):
@@ -68,16 +51,16 @@ class fcuModes:
 		try:
 			takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', mavros_msgs.srv.CommandTOL)
 			takeoffService(altitude = 3)
-		except rospy.ServiceException, e:
-			print "Service takeoff call failed: %s"%e
+		except rospy.ServiceException as e:
+			print(f"Service takeoff call failed: {e}")
 
 	def setArm(self, _to_arm):
 		rospy.wait_for_service('mavros/cmd/arming')
 		try:
 			armService = rospy.ServiceProxy('mavros/cmd/arming', mavros_msgs.srv.CommandBool)
 			armService(_to_arm)
-		except rospy.ServiceException, e:
-			print "Service arming call failed: %s"%e
+		except rospy.ServiceException as e:
+			print(f"Service arming call failed: {e}")
 
 	def setMode(self, _mode):
 		global rate
@@ -92,8 +75,8 @@ class fcuModes:
 				while not self.__class__.state.mode == _mode:
 					flightModeService(custom_mode = _mode)
 					rate.sleep()
-			except rospy.ServiceException, e:
-				print "service set_mode call failed: %s. Offboard Mode could not be set." % e
+			except rospy.ServiceException as e:
+				print(f"service set_mode call failed: {e}. Offboard Mode could not be set.")
 
 	def wait_for_land_and_disarm(self):
 		global rate

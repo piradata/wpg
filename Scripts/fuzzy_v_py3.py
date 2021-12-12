@@ -17,7 +17,7 @@ import PySimpleGUI27 as sg
 import _thread as thread
 import time
 
-# PID constantes
+# PID constants
 KPx = KPy = KPz = 2.6
 KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
@@ -36,13 +36,11 @@ class DronePosition:
 		self.y=0.0
 		self.z=0.0
 
-
 class DroneVelocity:
 	def __init__(self):
 		self.x=0.0
 		self.y=0.0
 		self.z=0.0
-
 
 class fcuModes:
 	def setTakeoff(self):
@@ -75,7 +73,6 @@ class fcuModes:
 					rate.sleep()
 			except rospy.ServiceException as e:
 				print(f"service set_mode call failed: {e}. Offboard Mode could not be set.")
-
 
 class SetpointPosition:
 	def init(self, _x, _y, _z):
@@ -142,13 +139,13 @@ class SetpointPosition:
 			time.sleep(delay)
 
 	def reached(self, topic):
-		def is_near(msg, _axi_1, _axi_2):
+		def is_near(_axi_1, _axi_2):
 			# rospy.logdebug("Position %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
 			return abs(_axi_1 - _axi_2) < 0.2
 
-		if is_near('X', topic.pose.position.x, self.x) and \
-			is_near('Y', topic.pose.position.y, self.y) and \
-			is_near('Z', topic.pose.position.z, self.z):
+		if is_near(topic.pose.position.x, self.x) and \
+			is_near(topic.pose.position.y, self.y) and \
+			is_near(topic.pose.position.z, self.z):
 			# rospy.loginfo("i have reached")
 			# rospy.loginfo(self.done_evt)
 			self.done_evt.set()
@@ -156,7 +153,6 @@ class SetpointPosition:
 		DronePose.x = topic.pose.position.x
 		DronePose.y = topic.pose.position.y
 		DronePose.z = topic.pose.position.z
-
 
 class SetpointVelocity:
 	def init(self, _x, _y, _z):
@@ -171,9 +167,9 @@ class SetpointVelocity:
 
 		self.done_evt = threading.Event()
 
-		# publisher for fuzzy (teste)
+		# publisher for fuzzy (test)
 		self.pub_fuz = rospy.Publisher('fuzzy_values', fuzzy_msg, queue_size=10)
-		# subscriber for fuzzy (teste)
+		# subscriber for fuzzy (test)
 		self.sub_fuz = rospy.Subscriber('defuzzy_values', defuzzy_msg, self.calculate_fuzzy)
 		
 		# publisher for reference position (ploting reasons)
@@ -297,7 +293,7 @@ class SetpointVelocity:
 				#todo fuzzy com y e z
 				rospy.loginfo_once("initalized fuzzyfication for the fist time")
 				if not self.defuzzed.P_X == 0:
-					rospy.loginfo_once("primeiro valor de P_X modificado pelo sistema fuzzy")
+					rospy.loginfo_once("first value of P_X modified by fuzzy system")
 					rospy.loginfo_once("P_x = " + str(self.defuzzed.P_X))
 				global KPx
 				KPx += self.defuzzed.P_X/SOFTNESS
@@ -387,21 +383,21 @@ class SetpointVelocity:
 			time.sleep(delay)
 
 	def velocity_meter(self, topic):
-		def is_near(msg, _axi_1, _axi_2):
+		def is_near(_axi_1, _axi_2):
 			# rospy.loginfo("Velocity %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
 			return abs(_axi_1 - _axi_2) < 0.2
 
-		if is_near('X', DronePose.x, self.x) and \
-			is_near('Y', DronePose.y, self.y) and \
-			is_near('Z', DronePose.z, self.z):
+		if is_near(DronePose.x, self.x) and \
+			is_near(DronePose.y, self.y) and \
+			is_near(DronePose.z, self.z):
 			self.done_evt.set()
 
 		DroneVel.x = topic.twist.linear.x
 		DroneVel.y = topic.twist.linear.y
 		DroneVel.z = topic.twist.linear.z
 
-
 state = State()
+
 def stateCb1(msg):
 	global state
 	state = msg
@@ -411,12 +407,16 @@ def stateCb2(msg):
 	global extend_state
 	extend_state = msg
 
-
 DronePose = DronePosition()
 DroneVel = DroneVelocity()
 modes = fcuModes()
 setpoint_pos = SetpointPosition()
 setpoint_vel = SetpointVelocity()
+
+def test_run(in_X, in_Y, in_Z):
+	pass
+	# setpoint_vel.set(0.0, 0.0, 0.0, wait=True, )
+
 
 if __name__ == '__main__':
 	try:
@@ -434,7 +434,7 @@ if __name__ == '__main__':
 			modes.setArm(True)
 			rate.sleep()
 		
-		rospy.loginfo("## Iniciando modulo de controle de posição")
+		rospy.loginfo("## Initiating module of position control")
 		setpoint_pos.init(0.0, 0.0, 0.0)
 		setpoint_pos.start()
 
@@ -444,10 +444,10 @@ if __name__ == '__main__':
 		rospy.loginfo("Takeoff")
 		setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
 
-		rospy.loginfo("## finalizando modulo de controle de posição")
+		rospy.loginfo("## finalizing module of position control")
 		setpoint_pos.finish()
 
-		rospy.loginfo("## Iniciando modulo de controle de velocidade")
+		rospy.loginfo("## Initiating module of velocity control")
 		setpoint_vel.init(0.0, 0.0, 2.0)
 		setpoint_vel.start()
 
@@ -474,8 +474,6 @@ if __name__ == '__main__':
 		pointSize = 10
 		point = graph.draw_point([0, 0], pointSize, color='green')
 
-		gui = True
-
 		while(True):
 			try:
 				event, values = window.Read(timeout=100)
@@ -491,7 +489,7 @@ if __name__ == '__main__':
 					setpoint_vel.z = setpoint_vel.z - 1.0
 
 				if event == 'SEND_YAW':
-					#todo how the hell i send the yaw?
+					#todo how the hell i send the yaw on velocity mode?
 					pass
 					# try:
 					# 	setpoint_pos.yaw_degrees = int(values["YAW"])
