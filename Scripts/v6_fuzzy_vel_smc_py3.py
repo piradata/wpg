@@ -37,11 +37,45 @@ SOFTNESS = 50
 # default reaching distance
 DEFAULT_REACH_DIST = 0.2
 
+# message definitions
+msg_set_pos = SP.PoseStamped(
+	header=SP.Header(
+		frame_id="waypoint_to_go",  # no matter, plugin don't use TF
+		stamp=rospy.Time.now()
+	),    # stamp should update
+)
+msg_set_vel = SP.TwistStamped(
+	header=SP.Header(
+		frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
+		stamp=rospy.Time.now()
+	),    # stamp should update
+)
+ref_pose_msg = SP.PoseStamped(
+	header=SP.Header(
+		frame_id="setpoint_position",  # no matter, plugin don't use TF
+		stamp=rospy.Time.now()
+	),  # stamp should update
+)
+fuz_msg = fuzzy_msg(
+	header=SP.Header(
+		frame_id="fuzzy_values",  # no matter, plugin don't use TF
+		stamp=rospy.Time.now()
+	),  # stamp should update
+)
+smc_msg = vehicle_smc_gains_msg(
+	header=SP.Header(
+		frame_id="smc_values",  # no matter, plugin don't use TF
+		stamp=rospy.Time.now()
+	),  # stamp should update
+)
+
 class DronePosition:
 	def __init__(self):
 		self.x=0.0
 		self.y=0.0
 		self.z=0.0
+	def xyz(self):
+		return [self.x, self.x, self.x] 
 
 class DroneVelocity:
 	def __init__(self):
@@ -108,27 +142,21 @@ class SetpointPosition:
 		# thread.exit_thread()
 
 	def navigate_position(self):
-		msg = SP.PoseStamped(
-			header=SP.Header(
-				frame_id="waypoint_to_go",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()),    # stamp should update
-		)
-
 		while not rospy.is_shutdown():
 			if not self.activated:
 				break
 
-			msg.pose.position.x = self.x
-			msg.pose.position.y = self.y
-			msg.pose.position.z = self.z
+			msg_set_pos.pose.position.x = self.x
+			msg_set_pos.pose.position.y = self.y
+			msg_set_pos.pose.position.z = self.z
 
 			yaw = radians(self.yaw_degrees)
 			quaternion = quaternion_from_euler(0, 0, yaw)
-			msg.pose.orientation = SP.Quaternion(*quaternion)
+			msg_set_pos.pose.orientation = SP.Quaternion(*quaternion)
 
 			# rospy.loginfo("there is life on navigate")
 
-			self.pub_setpoint.publish(msg)
+			self.pub_setpoint.publish(msg_set_pos)
 			rate.sleep()
 
 	def set(self, _x, _y, _z, delay=0, wait=False):
@@ -270,34 +298,6 @@ class SetpointVelocity:
 		self.activated = False
 
 	def control_pid(self):
-		setpoint_msg = SP.TwistStamped(
-			header=SP.Header(
-				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()
-			),    # stamp should update
-		)
-
-		ref_pose_msg = SP.PoseStamped(
-			header=SP.Header(
-				frame_id="setpoint_position",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()
-			),  # stamp should update
-		)
-
-		fuz_msg = fuzzy_msg(
-			header=SP.Header(
-				frame_id="fuzzy_values",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()
-			),  # stamp should update
-		)
-
-		smc_msg = vehicle_smc_gains_msg(
-			header=SP.Header(
-				frame_id="smc_values",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()
-			),  # stamp should update
-		)
-
 		while not rospy.is_shutdown():
 			if not self.activated:
 				break
@@ -346,32 +346,34 @@ class SetpointVelocity:
 			self.y_vel = PY + DY + IY
 			self.z_vel = PZ + DZ + IZ
 
+			# topic for plotting desired position
+			ref_pose_msg.pose.position.x = setpoint_vel.x
+			ref_pose_msg.pose.position.y = setpoint_vel.y
+			ref_pose_msg.pose.position.z = setpoint_vel.z
+
+			msg_set_vel.twist.linear.x = self.x_vel
+			msg_set_vel.twist.linear.y = self.y_vel
+			msg_set_vel.twist.linear.z = self.z_vel
+
 			fuz_msg.Error = self.error.x.act
 			fuz_msg.D_Error = self.error.x.Deri
 			fuz_msg.P_val = KPx
 			fuz_msg.I_val = KIx
 			fuz_msg.D_val = KDx
 
-			ref_pose_msg.pose.position.x = setpoint_vel.x
-			ref_pose_msg.pose.position.y = setpoint_vel.y
-			ref_pose_msg.pose.position.z = setpoint_vel.z
-
-			setpoint_msg.twist.linear.x = self.x_vel
-			setpoint_msg.twist.linear.y = self.y_vel
-			setpoint_msg.twist.linear.z = self.z_vel
-
 			smc_msg.k_gains = K_roll, K_pitch, K_yaw
 			smc_msg.beta_gains = B_roll, B_pitch, B_yaw
 			smc_msg.lambda_gains = L_roll, L_pitch, L_yaw
 
-			fuz_msg.header.stamp = rospy.Time.now()
-			self.pub_fuz.publish(fuz_msg)
-
+			# topic for plotting desired position
 			ref_pose_msg.header.stamp = rospy.Time.now()
 			self.pub_refpos.publish(ref_pose_msg)
 
-			setpoint_msg.header.stamp = rospy.Time.now()
-			self.pub_setpoint.publish(setpoint_msg)
+			msg_set_vel.header.stamp = rospy.Time.now()
+			self.pub_setpoint.publish(msg_set_vel)
+
+			fuz_msg.header.stamp = rospy.Time.now()
+			self.pub_fuz.publish(fuz_msg)
 
 			smc_msg.header.stamp = rospy.Time.now()
 			self.pub_smc.publish(smc_msg)
@@ -430,6 +432,7 @@ setpoint_vel = SetpointVelocity()
 def test_run(in_X, in_Y, in_Z):
 	pass
 	# setpoint_vel.set(0.0, 0.0, 0.0, wait=True, )
+	DronePose.xyz()
 
 
 if __name__ == '__main__':
