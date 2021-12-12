@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from math import *
+# from PySimpleGUI27.PySimpleGUI27 import DEFAULT_AUTOCLOSE_TIME
+
+# from numpy.core import numeric
 from mavros.utils import *
 from mavros_msgs.msg import *
 from mavros_msgs.srv import *
@@ -13,6 +16,7 @@ from wpg.msg import vehicle_smc_gains as vehicle_smc_gains_msg
 from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
 
+import numbers
 import PySimpleGUI27 as sg
 import _thread as thread
 import time
@@ -29,6 +33,9 @@ L_roll, L_pitch, L_yaw = [1.1,1.1,1.1]
 
 # non-brutness of fuzzy
 SOFTNESS = 50
+
+# default reaching distance
+DEFAULT_REACH_DIST = 0.2
 
 class DronePosition:
 	def __init__(self):
@@ -163,6 +170,9 @@ class SetpointVelocity:
 		self.y_vel = 0
 		self.z_vel = 0
 
+		
+		self.reaching_distance = DEFAULT_REACH_DIST
+
 		self.yaw_degrees = 0
 
 		self.done_evt = threading.Event()
@@ -251,14 +261,13 @@ class SetpointVelocity:
 		self.fuzzyfy = False
 
 	def calculate_fuzzy(self, fuz_topic):
-		#todo implement Y and Z axis too
+		# TODO: implement Y and Z axis too
 		self.defuzzed.P_X = fuz_topic.Delta_P_val
 		self.defuzzed.I_X = fuz_topic.Delta_I_val
 		self.defuzzed.D_X = fuz_topic.Delta_D_val
 
 	def finish(self):
 		self.activated = False
-		# thread.exit_thread()
 
 	def control_pid(self):
 		msg = SP.TwistStamped(
@@ -267,22 +276,26 @@ class SetpointVelocity:
 				stamp=rospy.Time.now()
 			),    # stamp should update
 		)
+
 		ref_pose_msg = SP.PoseStamped(
 			header=SP.Header(
 				frame_id="setpoint_position",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()
 			),  # stamp should update
 		)
+
 		fuz_msg = fuzzy_msg(
 			header=SP.Header(
 				frame_id="fuzzy_values",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()
 			),  # stamp should update
 		)
+
 		smc_msg = vehicle_smc_gains_msg(
 			header=SP.Header(
 				frame_id="smc_values",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()),  # stamp should update
+				stamp=rospy.Time.now()
+			),  # stamp should update
 		)
 
 		while not rospy.is_shutdown():
@@ -290,7 +303,7 @@ class SetpointVelocity:
 				break
 
 			if self.fuzzyfy:
-				#todo fuzzy com y e z
+				# TODO: fuzzy com y e z
 				rospy.loginfo_once("initalized fuzzyfication for the fist time")
 				if not self.defuzzed.P_X == 0:
 					rospy.loginfo_once("first value of P_X modified by fuzzy system")
@@ -369,24 +382,29 @@ class SetpointVelocity:
 
 			rate.sleep()
 
-	def set(self, _x, _y, _z, delay=0, wait=False):
-		self.done_evt.clear()
+	def set(self, _x, _y, _z, delay=0, wait=False, reaching_distance = None):
+		if isinstance(reaching_distance, numbers.Number):
+			self.reaching_distance = reaching_distance
 		self.x = _x
 		self.y = _y
 		self.z = _z
+		self.done_evt.clear()
 
 		if wait:
 			while not self.done_evt.is_set() and not rospy.is_shutdown():
 				rate.sleep()
+		
+		# return reaching_distance to default value
+		self.reaching_distance = DEFAULT_REACH_DIST
 
 		if delay > 0:
 			time.sleep(delay)
 
 	def velocity_meter(self, topic):
 		def is_near(_axi_1, _axi_2):
-			# rospy.loginfo("Velocity %s: local: %d, target: %d, abs diff: %d", msg, _axi_1, _axi_2, abs(_axi_1 - _axi_2))
-			return abs(_axi_1 - _axi_2) < 0.2
+			return abs(_axi_1 - _axi_2) < self.reaching_distance
 
+		# is_near considers a cuboid distance instead of a spherical one
 		if is_near(DronePose.x, self.x) and \
 			is_near(DronePose.y, self.y) and \
 			is_near(DronePose.z, self.z):
