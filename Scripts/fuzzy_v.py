@@ -15,9 +15,6 @@ import PySimpleGUI27 as sg
 import thread
 import time
 
-gui = False
-velocity_control_activate = False
-
 #PID constantes
 KPx = KPy = KPz = 2.6
 KIx = KIy = KIz = 0.25
@@ -427,7 +424,6 @@ if __name__ == '__main__':
 		rospy.loginfo("## Iniciando modulo de controle de velocidade")
 		setpoint_vel.init(0.0, 0.0, 2.0)
 		setpoint_vel.start()
-		# velocity_control_activate = True
 
 		_X_SIZE = 4
 		_Y_SIZE = 4
@@ -451,8 +447,6 @@ if __name__ == '__main__':
 
 		pointSize = 10
 		point = graph.draw_point([0, 0], pointSize, color='green')
-
-		gui = True
 
 		while(True):
 			try:

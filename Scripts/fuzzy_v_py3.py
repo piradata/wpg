@@ -6,7 +6,9 @@ from mavros.utils import *
 from mavros_msgs.msg import *
 from mavros_msgs.srv import *
 
-from wpg.msg import fuzzy as fuzzy_msg, defuzzyfied as defuzzy_msg
+from wpg.msg import fuzzy as fuzzy_msg
+from wpg.msg import defuzzyfied as defuzzy_msg
+from wpg.msg import vehicle_smc_gains as vehicle_smc_gains_msg
 
 from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
@@ -15,13 +17,15 @@ import PySimpleGUI27 as sg
 import _thread as thread
 import time
 
-gui = False
-velocity_control_activate = False
-
-#PID constantes
+# PID constantes
 KPx = KPy = KPz = 2.6
 KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
+
+# SMC constants
+K_roll, K_pitch, K_yaw = [1,1,1]
+B_roll, B_pitch, B_yaw = [1.2,1.2,1.2]
+L_roll, L_pitch, L_yaw = [1.1,1.1,1.1]
 
 # non-brutness of fuzzy
 SOFTNESS = 50
@@ -171,12 +175,16 @@ class SetpointVelocity:
 		self.pub_fuz = rospy.Publisher('fuzzy_values', fuzzy_msg, queue_size=10)
 		# subscriber for fuzzy (teste)
 		self.sub_fuz = rospy.Subscriber('defuzzy_values', defuzzy_msg, self.calculate_fuzzy)
+		
 		# publisher for reference position (ploting reasons)
 		self.pub_refpos = rospy.Publisher('reference_pos', SP.PoseStamped, queue_size=10)
 		# publisher for mavros/setpoint_position/local
 		self.pub = SP.get_pub_velocity_cmd_vel(queue_size=10)
 		# subscriber for mavros/local_position/local
 		self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'velocity_local'), SP.TwistStamped, self.velocity_meter)
+
+		# publisher for smc gains
+		self.pub_smc = rospy.Publisher('smc_values', vehicle_smc_gains_msg, queue_size=10)
 
 	def start(self):
 		self.activated = True
@@ -260,16 +268,24 @@ class SetpointVelocity:
 		msg = SP.TwistStamped(
 			header=SP.Header(
 				frame_id="Drone_Vel_setpoint",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()),    # stamp should update
+				stamp=rospy.Time.now()
+			),    # stamp should update
 		)
 		ref_pose_msg = SP.PoseStamped(
 			header=SP.Header(
 				frame_id="setpoint_position",  # no matter, plugin don't use TF
-				stamp=rospy.Time.now()),  # stamp should update
+				stamp=rospy.Time.now()
+			),  # stamp should update
 		)
 		fuz_msg = fuzzy_msg(
 			header=SP.Header(
 				frame_id="fuzzy_values",  # no matter, plugin don't use TF
+				stamp=rospy.Time.now()
+			),  # stamp should update
+		)
+		vehicle_smc_gains_msg = vehicle_smc_gains_msg(
+			header=SP.Header(
+				frame_id="smc_values",  # no matter, plugin don't use TF
 				stamp=rospy.Time.now()),  # stamp should update
 		)
 
@@ -339,6 +355,10 @@ class SetpointVelocity:
 			msg.twist.linear.y = self.y_vel
 			msg.twist.linear.z = self.z_vel
 
+			vehicle_smc_gains_msg.k_gains = K_roll, K_pitch, K_yaw
+			vehicle_smc_gains_msg.beta_gains = B_roll, B_pitch, B_yaw
+			vehicle_smc_gains_msg.lambda_gains = L_roll, L_pitch, L_yaw
+
 			fuz_msg.header.stamp = rospy.Time.now()
 			self.pub_fuz.publish(fuz_msg)
 
@@ -347,6 +367,9 @@ class SetpointVelocity:
 
 			msg.header.stamp = rospy.Time.now()
 			self.pub.publish(msg)
+
+			vehicle_smc_gains_msg.header.stamp = rospy.Time.now()
+			self.pub_smc.publish(vehicle_smc_gains_msg)
 
 			rate.sleep()
 
@@ -427,7 +450,6 @@ if __name__ == '__main__':
 		rospy.loginfo("## Iniciando modulo de controle de velocidade")
 		setpoint_vel.init(0.0, 0.0, 2.0)
 		setpoint_vel.start()
-		# velocity_control_activate = True
 
 		_X_SIZE = 4
 		_Y_SIZE = 4
@@ -480,6 +502,11 @@ if __name__ == '__main__':
 					KPx = KPy = KPz = float(values["K_P"])
 					KIx = KIy = KIz = float(values["K_I"])
 					KDx = KDy = KDz = float(values["K_D"])
+
+				if event == 'SEND_PID':
+					K_roll, K_pitch, K_yaw = list(map(float, values["SMC_K"].split(',')))
+					L_roll, L_pitch, L_yaw = list(map(float, values["SMC_L"].split(',')))
+					B_roll, B_pitch, B_yaw = list(map(float, values["SMC_B"].split(',')))
 
 				if event == 'ACTIVATE_FUZZY':
 					setpoint_vel.activate_fuzzy()
