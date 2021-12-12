@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/fernando/catkin_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/fernando/catkin_ws/src/mavros/libmavconn/include/**",
+        "/home/fernando/catkin_ws/src/mavros/mavros/include/**",
+        "/home/fernando/catkin_ws/src/mavros/mavros_msgs/include/**",
+        "/home/fernando/catkin_ws/src/mavros/test_mavros/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}

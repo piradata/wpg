@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from math import *
@@ -12,7 +12,7 @@ from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
 
 import PySimpleGUI27 as sg
-import thread
+import _thread as thread
 import time
 
 gui = False
@@ -46,16 +46,16 @@ class fcuModes:
 		try:
 			takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', mavros_msgs.srv.CommandTOL)
 			takeoffService(altitude = 3)
-		except rospy.ServiceException, e:
-			print "Service takeoff call failed: %s"%e
+		except rospy.ServiceException as e:
+			print(f"Service takeoff call failed: {e}")
 
 	def setArm(self, _to_arm):
 		rospy.wait_for_service('mavros/cmd/arming')
 		try:
 			armService = rospy.ServiceProxy('mavros/cmd/arming', mavros_msgs.srv.CommandBool)
 			armService(_to_arm)
-		except rospy.ServiceException, e:
-			print "Service arming call failed: %s"%e
+		except rospy.ServiceException as e:
+			print(f"Service arming call failed: {e}")
 
 	def setMode(self, _mode):
 		if _mode in ("STABILIZED",
@@ -69,8 +69,8 @@ class fcuModes:
 				while not state.mode == _mode:
 					flightModeService(custom_mode = _mode)
 					rate.sleep()
-			except rospy.ServiceException, e:
-				print "service set_mode call failed: %s. Offboard Mode could not be set." % e
+			except rospy.ServiceException as e:
+				print(f"service set_mode call failed: {e}. Offboard Mode could not be set.")
 
 
 class SetpointPosition:
