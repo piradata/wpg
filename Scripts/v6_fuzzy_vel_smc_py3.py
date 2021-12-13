@@ -428,7 +428,7 @@ def test_run(in_X, in_Y, in_Z, dist):
 	setpoint_vel.set(in_X + 2, in_Y, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== make circle")
 	for angle in range(360):
-		setpoint_vel.set(in_X + 2 * math.cos(math.radians(angle)) , in_Y + math.sin(math.radians(angle)), in_Z, wait=True, reaching_distance = dist)
+		setpoint_vel.set(in_X + 2 * math.cos(math.radians(angle)) , in_Y + 2 * math.sin(math.radians(angle)), in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== return")
 	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== move diagonally")
