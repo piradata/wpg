@@ -423,26 +423,26 @@ modes = fcuModes()
 setpoint_pos = SetpointPosition()
 setpoint_vel = SetpointVelocity()
 
-def test_run(in_X, in_Y, in_Z):
+def test_run(in_X, in_Y, in_Z, dist):
 	rospy.loginfo("==== move 2 meters")
-	setpoint_vel.set(in_X + 2, in_Y, in_Z, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X + 2, in_Y, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== make circle")
 	for angle in range(360):
-		setpoint_vel.set(in_X + 2 * math.cos(math.radians(angle)) , in_Y + math.sin(math.radians(angle)), in_Z, wait=True, reaching_distance = 0.1)
+		setpoint_vel.set(in_X + 2 * math.cos(math.radians(angle)) , in_Y + math.sin(math.radians(angle)), in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== return")
-	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== move diagonally")
-	setpoint_vel.set(in_X + 2, in_Y + 2, in_Z, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X + 2, in_Y + 2, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== return")
-	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== crazy")
-	setpoint_vel.set(in_X + 0.5, in_Y + 1.2, in_Z + 1.6, wait=True, reaching_distance = 0.1)
-	setpoint_vel.set(in_X + 0.2, in_Y + 0.7, in_Z + 1.4, wait=True, reaching_distance = 0.1)
-	setpoint_vel.set(in_X + 0.6, in_Y + 1.4, in_Z + 1.9, wait=True, reaching_distance = 0.1)
-	setpoint_vel.set(in_X + 0.1, in_Y + 0.9, in_Z + 1.3, wait=True, reaching_distance = 0.1)
-	setpoint_vel.set(in_X + 0.7, in_Y + 1.3, in_Z + 1.7, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X + 0.5, in_Y + 1.2, in_Z + 1.6, wait=True, reaching_distance = dist)
+	setpoint_vel.set(in_X + 0.2, in_Y + 0.7, in_Z + 1.2, wait=True, reaching_distance = dist)
+	setpoint_vel.set(in_X + 0.6, in_Y + 1.4, in_Z + 1.9, wait=True, reaching_distance = dist)
+	setpoint_vel.set(in_X + 0.1, in_Y + 0.2, in_Z + 1.3, wait=True, reaching_distance = dist)
+	setpoint_vel.set(in_X + 0.7, in_Y + 1.3, in_Z + 1.7, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== return")
-	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = 0.1)
+	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
 
 
 if __name__ == '__main__':
@@ -479,7 +479,7 @@ if __name__ == '__main__':
 		setpoint_vel.start()
 
 		rospy.loginfo("## Initiating test flight")
-		test_run(0.0, 0.0, 2.0)
+		test_run(0.0, 0.0, 2.0, 1.5)
 		rospy.loginfo("## Test flight finished!!!")
 
 		rospy.loginfo("## Opening control interface")
