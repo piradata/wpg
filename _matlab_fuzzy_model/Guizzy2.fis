@@ -1,0 +1,65 @@
+[System]
+Name='Guizzy2'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=3
+NumRules=10
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='X-erro'
+Range=[0 0.5]
+NumMFs=3
+MF1='ZER':'pimf',[-0.1 0 0 0.1]
+MF2='LOW':'pimf',[0 0.1 0.2 0.4]
+MF3='BIG':'pimf',[0.1 0.4 0.6 0.6]
+
+[Input2]
+Name='X-erro-D'
+Range=[0 1]
+NumMFs=4
+MF1='Zero':'pimf',[-0.1 0 0 0.1]
+MF2='MED':'pimf',[0.0479 0.236 0.403 0.61144578313253]
+MF3='BIG':'pimf',[0.4 0.6 1.1 1.1]
+MF4='Low':'pimf',[0 0.1 0.1 0.2]
+
+[Output1]
+Name='Delta-P'
+Range=[-0.35 0.35]
+NumMFs=3
+MF1='Low':'trapmf',[-0.35 -0.35 -0.175 0]
+MF2='Med':'trapmf',[-0.158 -0.04 0.04 0.158]
+MF3='Big':'trapmf',[0 0.175 0.35 0.35]
+
+[Output2]
+Name='Delta-I'
+Range=[-2.375 2.375]
+NumMFs=3
+MF1='Low':'trapmf',[-2.375 -2.375 -1.188 0]
+MF2='Med':'trimf',[-1.188 0 1.188]
+MF3='Big':'trapmf',[0 1.188 2.375 2.375]
+
+[Output3]
+Name='Delta-D'
+Range=[-0.1425 0.1425]
+NumMFs=3
+MF1='Low':'trapmf',[-0.142 -0.142 -0.05 0]
+MF2='Med':'trimf',[-0.07125 0 0.07125]
+MF3='Big':'trapmf',[0 0.05 0.142 0.142]
+
+[Rules]
+0 1, 2 2 2 (1) : 1
+1 4, 1 1 3 (1) : 1
+2 4, 2 2 2 (1) : 1
+3 4, 3 3 1 (1) : 1
+1 2, 1 2 2 (1) : 1
+2 2, 2 1 3 (1) : 1
+3 2, 2 2 1 (1) : 1
+1 3, 3 3 1 (1) : 1
+2 3, 2 1 3 (1) : 1
+3 3, 3 3 1 (1) : 1
