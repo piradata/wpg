@@ -32,7 +32,7 @@ L_roll, L_pitch, L_yaw = [1.1,1.1,1.1]
 SOFTNESS = 50
 
 # default reaching distance
-DEFAULT_REACH_DIST = 0.2
+DEFAULT_REACH_DIST = 0.1
 
 class DronePosition:
 	def __init__(self):
@@ -479,7 +479,7 @@ if __name__ == '__main__':
 		setpoint_vel.start()
 
 		rospy.loginfo("## Initiating test flight")
-		test_run(0.0, 0.0, 2.0, 1.5)
+		test_run(0.0, 0.0, 2.0, 0.05)
 		rospy.loginfo("## Test flight finished!!!")
 
 		rospy.loginfo("## Opening control interface")
