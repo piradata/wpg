@@ -443,6 +443,10 @@ def test_run(in_X, in_Y, in_Z, dist):
 	setpoint_vel.set(in_X + 0.7, in_Y + 1.3, in_Z + 1.7, wait=True, reaching_distance = dist)
 	rospy.loginfo("==== return")
 	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
+	rospy.loginfo("==== Super distance")
+	setpoint_vel.set(in_X + 500, in_Y + 500, in_Z + 100, wait=True, reaching_distance = dist)
+	rospy.loginfo("==== return")
+	setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
 
 
 if __name__ == '__main__':
