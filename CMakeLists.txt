@@ -22,6 +22,7 @@ add_message_files(
   FILES
   fuzzy.msg
   defuzzyfied.msg
+  vehicle_smc_gains.msg
 )
 
 
