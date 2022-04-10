@@ -3,7 +3,7 @@ for i = 1:length(Controllers)
 
     Controller = Controllers(i);
     
-    BAG = rosbag([sprintf("%s_test.bag", Controller)]);
+    BAG = rosbag([sprintf("%s_test_supernew.bag", Controller)]);
     
     titulo = sprintf("teste com controlador %s", Controller);
     
@@ -137,15 +137,15 @@ for i = 1:length(Controllers)
     hold off
     legend
     
-    figure('Name', Controller)
-    plot3(xPoints,yPoints,zPoints,'DisplayName', 'real movement')
-    hold on
-    plot3(xPointsRef,yPointsRef,zPointsRef,'DisplayName', 'wanted movement')
-    axis([-3, 3, -3, 3, 0, 6])
-    xlabel('X')
-    ylabel('Y')
-    zlabel('Z')
-    title(sprintf('Position tracker short distance %s', Controller))
-    hold off
-    legend
+%     figure('Name', Controller)
+%     plot3(xPoints,yPoints,zPoints,'DisplayName', 'real movement')
+%     hold on
+%     plot3(xPointsRef,yPointsRef,zPointsRef,'DisplayName', 'wanted movement')
+%     axis([-3, 3, -3, 3, 0, 6])
+%     xlabel('X')
+%     ylabel('Y')
+%     zlabel('Z')
+%     title(sprintf('Position tracker short distance %s', Controller))
+%     hold off
+%     legend
 end
