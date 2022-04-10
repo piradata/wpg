@@ -609,7 +609,7 @@ if __name__ == '__main__':
 
         rospy.loginfo("Landing")
         # Simulate a slow landing.
-        for altitude in range(INITIAL_ALTITUDE * 10):
+        for altitude in range(int(INITIAL_ALTITUDE * 10)):
             setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE - altitude/10, wait=True)
         setpoint_vel.set(0.0, 0.0, -0.1)
         modes.setMode("AUTO.LAND")
