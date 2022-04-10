@@ -429,7 +429,6 @@ setpoint_vel = SetpointVelocity()
 def test_run(in_X, in_Y, in_Z, dist):
     rospy.loginfo(f"++++++++ Begin test run")
     rospy.loginfo(f"++++++++ Origin: X -> {in_X}, in_Y -> {in_Y}, in_Z -> {in_Z}")
-    rospy.loginfo(f"==== Move {_bgcs} meters")	
 
     _bgcs = 2
     rospy.loginfo(f"==== Move {_bgcs} meters")
