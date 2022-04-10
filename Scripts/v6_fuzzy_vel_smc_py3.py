@@ -32,7 +32,7 @@ L_roll, L_pitch, L_yaw = [1.1, 1.1, 1.1]
 SOFTNESS = 50
 
 # set this variable to false to use the control panel
-TEST_FLIGHT_MODE = true
+TEST_FLIGHT_MODE = True
 
 # default reaching distance
 DEFAULT_REACH_DIST = 0.1
