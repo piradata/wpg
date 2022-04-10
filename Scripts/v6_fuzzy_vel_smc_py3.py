@@ -23,13 +23,16 @@ KPx = KPy = KPz = 2.6
 KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
 
-# SMC constants
+# SMC constants (not in use yet)
 K_roll, K_pitch, K_yaw = [1,   1,   1]
 B_roll, B_pitch, B_yaw = [1.2, 1.2, 1.2]
 L_roll, L_pitch, L_yaw = [1.1, 1.1, 1.1]
 
 # non-brutness of fuzzy
 SOFTNESS = 50
+
+# set this variable to false to use the control panel
+TEST_FLIGHT_MODE = true
 
 # default reaching distance
 DEFAULT_REACH_DIST = 0.1
@@ -179,7 +182,7 @@ class SetpointVelocity:
         self.pub_fuz = rospy.Publisher('fuzzy_values', fuzzy_msg, queue_size=10)
         # subscriber for fuzzy (test)
         self.sub_fuz = rospy.Subscriber('defuzzy_values', defuzzy_msg, self.calculate_fuzzy)
-        
+
         # publisher for reference position (ploting reasons)
         self.pub_refpos = rospy.Publisher('reference_pos', SP.PoseStamped, queue_size=10)
         # publisher for mavros/setpoint_position/local
@@ -304,8 +307,8 @@ class SetpointVelocity:
                     rospy.loginfo_once(f"P_x = {str(self.defuzzed.P_X)}")
                 global KPx
                 KPx += self.defuzzed.P_X/SOFTNESS
-                if KPx <=0.6: KPx=0.6
-                if KPx >=5.6: KPx=5.6
+                if KPx <= 0.6: KPx = 0.6
+                if KPx >= 5.6: KPx = 5.6
                 global KIx
                 KIx += self.defuzzed.I_X/SOFTNESS
                 if KIx <= 0.3: KIx = 0.3
@@ -462,7 +465,7 @@ def test_run(in_X, in_Y, in_Z, dist):
                          in_Y,
                          in_Z + _smcs * math.sin(math.radians(angle)),
                          wait=True, reaching_distance = dist)
-  
+
     _altd = 2
     _wttm = 2
     for _ in range(2):
@@ -470,10 +473,12 @@ def test_run(in_X, in_Y, in_Z, dist):
         setpoint_vel.set(in_X, in_Y, in_Z + _altd, wait=True, reaching_distance = dist)
         rospy.loginfo("==== Wait for {_wttm} seconds")
         sleep(_wttm)
+        # rospy.sleep(_wttm)
         rospy.loginfo("==== Return to origin")
         setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
         rospy.loginfo("==== Wait for {_wttm} seconds")
         sleep(_wttm)
+        # rospy.sleep(_wttm)
 
 
 if __name__ == '__main__':
@@ -509,86 +514,88 @@ if __name__ == '__main__':
         setpoint_vel.init(0.0, 0.0, 2.0)
         setpoint_vel.start()
 
-        rospy.loginfo("## Initiating test flight")
-        test_run(0.0, 0.0, 2.0, 0.05)
-        rospy.loginfo("## Test flight finished!!!")
+        if TEST_FLIGHT_MODE:
+            rospy.loginfo("## Initiating test flight")
+            test_run(0.0, 0.0, 2.0, 0.05)
+            rospy.loginfo("## Test flight finished!!!")
 
-        rospy.loginfo("## Opening control interface")
+        else:
+            rospy.loginfo("## Opening control interface")
 
-        _X_SIZE = 4
-        _Y_SIZE = 4
+            _X_SIZE = 4
+            _Y_SIZE = 4
 
-        layout = [[sg.Graph(canvas_size=(400, 400), graph_bottom_left=(-200, -200), graph_top_right=(200, 200), background_color='red', key='graph', enable_events=True, drag_submits=True)],
-                            [sg.Button("land", key="LAND"), sg.Button("go up", key="UP"), sg.Button("go down", key="DOWN")],
-                    [sg.Button("ACTIVATE_FUZZY", key="ACTIVATE_FUZZY"), sg.Button("DEACTIVATE_FUZZY", key="DEACTIVATE_FUZZY")],
-                            [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")],
-                            [sg.InputText(KPx, size=(10,10), tooltip="K_P", key="K_P"),
-                     sg.InputText(KIx, size=(10,10), tooltip="K_I", key="K_I"),
-                     sg.InputText(KDx, size=(10,10), tooltip="K_D", key="K_D"), sg.Button("SEND_PID", key="SEND_PID")]]
-        window = sg.Window('Drone control view', layout, finalize=True)
-        graph = window['graph']
+            layout = [[sg.Graph(canvas_size=(400, 400), graph_bottom_left=(-200, -200), graph_top_right=(200, 200), background_color='red', key='graph', enable_events=True, drag_submits=True)],
+                                [sg.Button("land", key="LAND"), sg.Button("go up", key="UP"), sg.Button("go down", key="DOWN")],
+                        [sg.Button("ACTIVATE_FUZZY", key="ACTIVATE_FUZZY"), sg.Button("DEACTIVATE_FUZZY", key="DEACTIVATE_FUZZY")],
+                                [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")],
+                                [sg.InputText(KPx, size=(10,10), tooltip="K_P", key="K_P"),
+                        sg.InputText(KIx, size=(10,10), tooltip="K_I", key="K_I"),
+                        sg.InputText(KDx, size=(10,10), tooltip="K_D", key="K_D"), sg.Button("SEND_PID", key="SEND_PID")]]
+            window = sg.Window('Drone control view', layout, finalize=True)
+            graph = window['graph']
 
-        oval1 = graph.draw_oval((-5, 0), (5, 50), fill_color='purple', line_color='purple')
-        oval3 = graph.draw_oval((0, 5), (50, -5), fill_color='purple', line_color='purple')
-        oval2 = graph.draw_oval((5, 0), (-5, -50), fill_color='blue', line_color='blue')
-        oval4 = graph.draw_oval((0, -5), (-50, 5), fill_color='blue', line_color='blue')
-        circleSize = 15
-        circle = graph.draw_circle((0, 0), circleSize, fill_color='black', line_color='green')
+            oval1 = graph.draw_oval((-5, 0), (5, 50), fill_color='purple', line_color='purple')
+            oval3 = graph.draw_oval((0, 5), (50, -5), fill_color='purple', line_color='purple')
+            oval2 = graph.draw_oval((5, 0), (-5, -50), fill_color='blue', line_color='blue')
+            oval4 = graph.draw_oval((0, -5), (-50, 5), fill_color='blue', line_color='blue')
+            circleSize = 15
+            circle = graph.draw_circle((0, 0), circleSize, fill_color='black', line_color='green')
 
-        pointSize = 10
-        point = graph.draw_point([0, 0], pointSize, color='green')
+            pointSize = 10
+            point = graph.draw_point([0, 0], pointSize, color='green')
 
-        while(True):
-            try:
-                event, values = window.Read(timeout=100)
-                # print(event, values)
-
-                if event in (None, 'LAND'):
-                    break
-
-                if event == 'UP':
-                    setpoint_vel.z = setpoint_vel.z + 1.0
-
-                if event == 'DOWN':
-                    setpoint_vel.z = setpoint_vel.z - 1.0
-
-                if event == 'SEND_YAW':
-                    # TODO: Implement
-                    pass
-                    # try:
-                    # 	setpoint_pos.yaw_degrees = int(values["YAW"])
-                    # except ValueError:
-                    # 	print("That's not an int, stupid!")
-
-                if event == 'SEND_PID':
-                    KPx = KPy = KPz = float(values["K_P"])
-                    KIx = KIy = KIz = float(values["K_I"])
-                    KDx = KDy = KDz = float(values["K_D"])
-
-                if event == 'SEND_SMC':
-                    K_roll, K_pitch, K_yaw = list(map(float, values["SMC_K"].split(',')))
-                    L_roll, L_pitch, L_yaw = list(map(float, values["SMC_L"].split(',')))
-                    B_roll, B_pitch, B_yaw = list(map(float, values["SMC_B"].split(',')))
-
-                if event == 'ACTIVATE_FUZZY':
-                    setpoint_vel.activate_fuzzy()
-
-                if event == 'DEACTIVATE_FUZZY':
-                    setpoint_vel.deactivate_fuzzy()
-
-                if not event == u'__TIMEOUT__':
+            while(True):
+                try:
+                    event, values = window.Read(timeout=100)
                     # print(event, values)
-                    _x, _y = values["graph"]
-                    if not _x == None:
-                        # move setpoint on graph
-                        graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
 
-                        setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_vel.z)
+                    if event in (None, 'LAND'):
+                        break
 
-                # move drone on graph
-                graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
-            except KeyboardInterrupt:
-                pass
+                    if event == 'UP':
+                        setpoint_vel.z = setpoint_vel.z + 1.0
+
+                    if event == 'DOWN':
+                        setpoint_vel.z = setpoint_vel.z - 1.0
+
+                    if event == 'SEND_YAW':
+                        # TODO: Implement
+                        pass
+                        # try:
+                        # 	setpoint_pos.yaw_degrees = int(values["YAW"])
+                        # except ValueError:
+                        # 	print("That's not an int, stupid!")
+
+                    if event == 'SEND_PID':
+                        KPx = KPy = KPz = float(values["K_P"])
+                        KIx = KIy = KIz = float(values["K_I"])
+                        KDx = KDy = KDz = float(values["K_D"])
+
+                    if event == 'SEND_SMC':
+                        K_roll, K_pitch, K_yaw = list(map(float, values["SMC_K"].split(',')))
+                        L_roll, L_pitch, L_yaw = list(map(float, values["SMC_L"].split(',')))
+                        B_roll, B_pitch, B_yaw = list(map(float, values["SMC_B"].split(',')))
+
+                    if event == 'ACTIVATE_FUZZY':
+                        setpoint_vel.activate_fuzzy()
+
+                    if event == 'DEACTIVATE_FUZZY':
+                        setpoint_vel.deactivate_fuzzy()
+
+                    if not event == u'__TIMEOUT__':
+                        # print(event, values)
+                        _x, _y = values["graph"]
+                        if not _x == None:
+                            # move setpoint on graph
+                            graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
+
+                            setpoint_vel.set(_X_SIZE * _x / 400.0, _Y_SIZE * _y / 400.0, setpoint_vel.z)
+
+                    # move drone on graph
+                    graph.RelocateFigure(circle, DronePose.x * 25 * _X_SIZE - circleSize, DronePose.y * 25 * _Y_SIZE + circleSize)
+                except KeyboardInterrupt:
+                    pass
 
         rospy.loginfo("Fly home")
         setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
