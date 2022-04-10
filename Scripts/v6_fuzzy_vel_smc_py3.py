@@ -468,17 +468,18 @@ def test_run(in_X, in_Y, in_Z, dist):
 
     _altd = 2
     _wttm = 2
-    for _ in range(2):
-        rospy.loginfo(f"==== Move up {_altd} meters")
-        setpoint_vel.set(in_X, in_Y, in_Z + _altd, wait=True, reaching_distance = dist)
-        rospy.loginfo("==== Wait for {_wttm} seconds")
-        sleep(_wttm)
-        # rospy.sleep(_wttm)
-        rospy.loginfo("==== Return to origin")
-        setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
-        rospy.loginfo("==== Wait for {_wttm} seconds")
-        sleep(_wttm)
-        # rospy.sleep(_wttm)
+    for direction in range(3):
+        d_a = [0, 0, 0]
+        d_a[direction] = _altd 
+        for _ in range(2):
+            rospy.loginfo(f"==== Move {_altd} meters on dir {direction}")
+            setpoint_vel.set(in_X + d_a[0], in_Y + d_a[1], in_Z + d_a[2], wait=True, reaching_distance = dist)
+            rospy.loginfo(f"==== Wait for {_wttm} seconds")
+            rospy.sleep(_wttm)
+            rospy.loginfo("==== Return to origin")
+            setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
+            rospy.loginfo(f"==== Wait for {_wttm} seconds")
+            rospy.sleep(_wttm)
 
 
 if __name__ == '__main__':
