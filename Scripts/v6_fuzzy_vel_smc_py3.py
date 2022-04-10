@@ -24,9 +24,9 @@ KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
 
 # SMC constants (not in use yet)
-K_roll, K_pitch, K_yaw = [1,   1,   1]
-B_roll, B_pitch, B_yaw = [1.2, 1.2, 1.2]
-L_roll, L_pitch, L_yaw = [1.1, 1.1, 1.1]
+K_roll, K_pitch, K_yaw = [0.23, 0.23, 0.10]
+B_roll, B_pitch, B_yaw = [0.05, 0.05, 0.10]
+L_roll, L_pitch, L_yaw = [20.0, 20.0, 10.0]
 
 # non-brutness of fuzzy
 SOFTNESS = 50
@@ -36,6 +36,10 @@ TEST_FLIGHT_MODE = True
 
 # default reaching distance
 DEFAULT_REACH_DIST = 0.1
+DEFAULT_REACH_DIST_FOR_DEBUG = 0.05
+
+# initial altitude
+INITIAL_ALTITUDE = 2.0
 
 class DronePosition:
     def __init__(self):
@@ -433,14 +437,17 @@ def test_run(in_X, in_Y, in_Z, dist):
     _bgcs = 2
     rospy.loginfo(f"==== Move {_bgcs} meters")
     setpoint_vel.set(in_X + _bgcs, in_Y, in_Z, wait=True, reaching_distance = dist)	
+    rospy.sleep(2)
     rospy.loginfo(f"==== Make circle of radius {_bgcs}")
     for angle in range(360):
         setpoint_vel.set(in_X + _bgcs * math.cos(math.radians(angle)),
                          in_Y + _bgcs * math.sin(math.radians(angle)),
                          in_Z,
                          wait=True, reaching_distance = dist)
+    rospy.sleep(2)
     rospy.loginfo("==== Return to origin")
     setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
+    rospy.sleep(2)
 
     _smcs = 1
     rospy.loginfo(f"==== Make little circles of radius {_smcs}")
@@ -466,7 +473,7 @@ def test_run(in_X, in_Y, in_Z, dist):
                          wait=True, reaching_distance = dist)
 
     _altd = 2
-    _wttm = 2
+    _wttm = 10
     for direction in range(3):
         d_a = [0, 0, 0]
         d_a[direction] = _altd 
@@ -505,18 +512,18 @@ if __name__ == '__main__':
         modes.setMode("OFFBOARD")
 
         rospy.loginfo("Takeoff")
-        setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
+        setpoint_pos.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
 
         rospy.loginfo("## finalizing module of position control")
         setpoint_pos.finish()
 
         rospy.loginfo("## Initiating module of velocity control")
-        setpoint_vel.init(0.0, 0.0, 2.0)
+        setpoint_vel.init(0.0, 0.0, INITIAL_ALTITUDE)
         setpoint_vel.start()
 
         if TEST_FLIGHT_MODE:
             rospy.loginfo("## Initiating test flight")
-            test_run(0.0, 0.0, 2.0, 0.05)
+            test_run(0.0, 0.0, INITIAL_ALTITUDE, DEFAULT_REACH_DIST_FOR_DEBUG)
             rospy.loginfo("## Test flight finished!!!")
 
         else:
@@ -598,12 +605,12 @@ if __name__ == '__main__':
                     pass
 
         rospy.loginfo("Fly home")
-        setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
+        setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
 
         rospy.loginfo("Landing")
         # Simulate a slow landing.
-        setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
-        setpoint_vel.set(0.0, 0.0, 0.0, wait=True)
+        for altitude in range(INITIAL_ALTITUDE * 10):
+            setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE - altitude/10, wait=True)
         setpoint_vel.set(0.0, 0.0, -0.1)
         modes.setMode("AUTO.LAND")
 
