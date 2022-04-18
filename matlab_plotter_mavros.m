@@ -65,35 +65,36 @@ for i = 1:length(Controllers)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     pos_x = subplot(3, 3, 1);
     xlabel('x-axis');
-    xlim([0 inf]);
     plot(ptime - BAG.StartTime, xPoints,'DisplayName','X position');
     hold on;
     plot(ptimeRef - BAG.StartTime, xPointsRef,'DisplayName','X ref position');
+    xlim([0 inf]);
     title('Position X');
     hold off;
     legend;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     pos_y = subplot(3, 3, 2);
     xlabel('y-axis');
-    xlim([0 inf]);
     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
     hold on
     plot(ptimeRef - BAG.StartTime, yPointsRef,'DisplayName','Y ref position');
+    xlim([0 inf]);
     title('Position Y');
     hold off
     legend
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     pos_z = subplot(3, 3, 3);
     xlabel('z-axis');
-    xlim([0 inf]);
     plot(ptime - BAG.StartTime, zPoints,'DisplayName','Z position');
     hold on;
     plot(ptimeRef - BAG.StartTime, zPointsRef,'DisplayName','Z ref position');
+    xlim([0 inf]);
     title('Position Z');
     hold off;
     legend;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     vel_x = subplot(3, 3, 4);
+    xlabel('x-axis');
     plot(veltime - BAG.StartTime, xvelPoints,'DisplayName','X Velocity');
     hold on;
     plot(velreftime - BAG.StartTime, xvelrefPoints,'DisplayName','X Velocity REF');
@@ -103,6 +104,7 @@ for i = 1:length(Controllers)
     legend;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     vel_y = subplot(3, 3, 5);
+    xlabel('y-axis');
     plot(veltime - BAG.StartTime, yvelPoints,'DisplayName','Y Velocity');
     hold on;
     plot(velreftime - BAG.StartTime, yvelrefPoints,'DisplayName','Y Velocity REF');
@@ -112,6 +114,7 @@ for i = 1:length(Controllers)
     legend;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     vel_z = subplot(3, 3, 6);
+    xlabel('z-axis');
     plot(veltime - BAG.StartTime, zvelPoints,'DisplayName','Z Velocity');
     hold on;
     plot(velreftime - BAG.StartTime, zvelrefPoints,'DisplayName','Z Velocity REF');
@@ -123,47 +126,80 @@ for i = 1:length(Controllers)
     err_pos_x = subplot(3, 3, 7);
     xlabel('x-axis');
     xlim([0 inf]);
-    time = ptime - BAG.StartTime;
+    
+    time = ptimeRef - BAG.StartTime;
     stime = time(1);
     ftime = time(end);
     sourceSize = size(xPointsRef);
     t = linspace(stime,ftime,sourceSize(1));
+    
+    time = ptime - BAG.StartTime;
+    stime = time(1);
+    ftime = time(end);
     targetSize = size(xPoints);
     ti = linspace(stime,ftime,targetSize(1));
+    
     xPointsRef_interpolated = interp1(t,xPointsRef,ti)';
     plot(ptime - BAG.StartTime, xPoints - xPointsRef_interpolated,'DisplayName','X position error');
+%     hold on
+%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
+%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
+%     hold off
+    xlim([0 inf]);
     title('Position error X');
-    legend;
+    legend
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     err_pos_y = subplot(3, 3, 8);
     xlabel('y-axis');
     xlim([0 inf]);
-    time = ptime - BAG.StartTime;
+    
+    time = ptimeRef - BAG.StartTime;
     stime = time(1);
     ftime = time(end);
     sourceSize = size(yPointsRef);
     t = linspace(stime,ftime,sourceSize(1));
+    
+    time = ptime - BAG.StartTime;
+    stime = time(1);
+    ftime = time(end);
     targetSize = size(yPoints);
     ti = linspace(stime,ftime,targetSize(1));
+    
     yPointsRef_interpolated = interp1(t,yPointsRef,ti)';
     plot(ptime - BAG.StartTime, yPoints - yPointsRef_interpolated,'DisplayName','Y position error');
+%     hold on
+%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
+%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
+%     hold off
+    xlim([0 inf]);
     title('Position error Y');
     legend
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     err_pos_z = subplot(3, 3, 9);
     xlabel('z-axis');
     xlim([0 inf]);
-    time = ptime - BAG.StartTime;
+    
+    time = ptimeRef - BAG.StartTime;
     stime = time(1);
     ftime = time(end);
     sourceSize = size(zPointsRef);
     t = linspace(stime,ftime,sourceSize(1));
+    
+    time = ptime - BAG.StartTime;
+    stime = time(1);
+    ftime = time(end);
     targetSize = size(zPoints);
     ti = linspace(stime,ftime,targetSize(1));
+    
     zPointsRef_interpolated = interp1(t,zPointsRef,ti)';
     plot(ptime - BAG.StartTime, zPoints - zPointsRef_interpolated,'DisplayName','Z position error');
+%     hold on
+%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
+%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
+%     hold off
+    xlim([0 inf]);
     title('Position error Z');
-    legend;
+    legend
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     set(all_fig, 'PaperPositionMode', 'auto');
     exportgraphics(all_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
