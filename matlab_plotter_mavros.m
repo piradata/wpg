@@ -271,7 +271,7 @@ for i = 1:length(Controllers)
     xticks(-2:0.5:2);
     yticks(-2:0.5:2);
     zticks(0:0.5:4);
-    title(sprintf('Position tracker long distance %s', Controller));
+    title(sprintf('Position tracker %s', Controller));
     hold off;
     legend('Location', 'northeast');
 
