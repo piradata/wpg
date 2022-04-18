@@ -436,8 +436,8 @@ def test_run(in_X, in_Y, in_Z, dist):
 
     _bgcs = 2
     rospy.loginfo(f"==== Move {_bgcs} meters")
-    for position in range(int(_bgcs * 100)):
-        setpoint_vel.set(in_X + position/100, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
+    for position in range(int(_bgcs * 10000)):
+        setpoint_vel.set(in_X + position/10000, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
     setpoint_vel.set(in_X + _bgcs, in_Y, in_Z, wait=True, reaching_distance = dist)	
     rospy.sleep(2)
     rospy.loginfo(f"==== Make circle of radius {_bgcs}")
@@ -448,8 +448,8 @@ def test_run(in_X, in_Y, in_Z, dist):
                          wait=True, reaching_distance = dist)
     rospy.sleep(2)
     rospy.loginfo("==== Return to origin")
-    for position in range(int(_bgcs * 100)):
-        setpoint_vel.set(in_X + _bgcs - position/100, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
+    for position in range(int(_bgcs * 10000)):
+        setpoint_vel.set(in_X + _bgcs - position/10000, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
     setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
     rospy.sleep(2)
 
@@ -477,16 +477,16 @@ def test_run(in_X, in_Y, in_Z, dist):
                          wait=True, reaching_distance = dist)
 
     _altd = 2
-    _wttm = 10
+    _wttm = 20
     for direction in range(3):
         d_a = [0, 0, 0]
         d_a[direction] = 1 
         for _ in range(2):
             rospy.loginfo(f"==== Move {_altd} meters on dir {direction}")
-            for position in range(int(_altd * 100)):
-                setpoint_vel.set(in_X + d_a[0] * position/100,
-                                 in_Y + d_a[1] * position/100,
-                                 in_Z + d_a[2] * position/100,
+            for position in range(int(_altd * 10000)):
+                setpoint_vel.set(in_X + d_a[0] * position/10000,
+                                 in_Y + d_a[1] * position/10000,
+                                 in_Z + d_a[2] * position/10000,
                                  wait=False, reaching_distance = dist * 2)
             setpoint_vel.set(in_X + d_a[0] * _altd,
                              in_Y + d_a[1] * _altd,
@@ -495,10 +495,10 @@ def test_run(in_X, in_Y, in_Z, dist):
             rospy.loginfo(f"==== Wait for {_wttm} seconds")
             rospy.sleep(_wttm)
             rospy.loginfo("==== Return to origin")
-            for position in range(int(_altd * 100)):
-                setpoint_vel.set(in_X + d_a[0] * _altd - d_a[0] * position/100,
-                                 in_Y + d_a[1] * _altd - d_a[1] * position/100,
-                                 in_Z + d_a[2] * _altd - d_a[2] * position/100,
+            for position in range(int(_altd * 10000)):
+                setpoint_vel.set(in_X + d_a[0] * _altd - d_a[0] * position/10000,
+                                 in_Y + d_a[1] * _altd - d_a[1] * position/10000,
+                                 in_Z + d_a[2] * _altd - d_a[2] * position/10000,
                                  wait=False, reaching_distance = dist * 2)
             setpoint_vel.set(in_X,
                              in_Y,
