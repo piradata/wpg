@@ -24,9 +24,9 @@ KIx = KIy = KIz = 0.25
 KDx = KDy = KDz = 0.4
 
 # SMC constants (not in use yet)
-K_roll, K_pitch, K_yaw = [1,   1,   1]
-B_roll, B_pitch, B_yaw = [1.2, 1.2, 1.2]
-L_roll, L_pitch, L_yaw = [1.1, 1.1, 1.1]
+K_roll, K_pitch, K_yaw = [0.23, 0.23, 0.10]
+B_roll, B_pitch, B_yaw = [0.05, 0.05, 0.10]
+L_roll, L_pitch, L_yaw = [20.0, 20.0, 10.0]
 
 # non-brutness of fuzzy
 SOFTNESS = 50
@@ -36,6 +36,10 @@ TEST_FLIGHT_MODE = True
 
 # default reaching distance
 DEFAULT_REACH_DIST = 0.1
+DEFAULT_REACH_DIST_FOR_DEBUG = 0.05
+
+# initial altitude
+INITIAL_ALTITUDE = 2.0
 
 # GAMBIT
 FLY_INTERRUPTED = False
@@ -431,6 +435,7 @@ setpoint_vel = SetpointVelocity()
 
 
 def land_n_disarm():
+    FLY_INTERRUPTED = True
     modes.setMode("AUTO.LAND")
     rospy.loginfo("disarming")
     while state.armed:
@@ -444,19 +449,25 @@ def land_n_disarm():
 def test_run(in_X, in_Y, in_Z, dist):
     rospy.loginfo(f"++++++++ Begin test run")
     rospy.loginfo(f"++++++++ Origin: in_X -> {in_X}, in_Y -> {in_Y}, in_Z -> {in_Z}")
-    rospy.loginfo(f"==== Move {_bgcs} meters")	
 
     _bgcs = 2
     rospy.loginfo(f"==== Move {_bgcs} meters")
+    for position in range(int(_bgcs * 10000)):
+        setpoint_vel.set(in_X + position/10000, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
     setpoint_vel.set(in_X + _bgcs, in_Y, in_Z, wait=True, reaching_distance = dist)	
+    rospy.sleep(2)
     rospy.loginfo(f"==== Make circle of radius {_bgcs}")
     for angle in range(360):
         setpoint_vel.set(in_X + _bgcs * math.cos(math.radians(angle)),
                          in_Y + _bgcs * math.sin(math.radians(angle)),
                          in_Z,
                          wait=True, reaching_distance = dist)
+    rospy.sleep(2)
     rospy.loginfo("==== Return to origin")
+    for position in range(int(_bgcs * 10000)):
+        setpoint_vel.set(in_X + _bgcs - position/10000, in_Y, in_Z, wait=False, reaching_distance = dist * 2)
     setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
+    rospy.sleep(2)
 
     _smcs = 1
     rospy.loginfo(f"==== Make little circles of radius {_smcs}")
@@ -482,17 +493,33 @@ def test_run(in_X, in_Y, in_Z, dist):
                          wait=True, reaching_distance = dist)
 
     _altd = 2
-    _wttm = 2
+    _wttm = 20
     for direction in range(3):
         d_a = [0, 0, 0]
-        d_a[direction] = _altd 
+        d_a[direction] = 1 
         for _ in range(2):
             rospy.loginfo(f"==== Move {_altd} meters on dir {direction}")
-            setpoint_vel.set(in_X + d_a[0], in_Y + d_a[1], in_Z + d_a[2], wait=True, reaching_distance = dist)
+            for position in range(int(_altd * 10000)):
+                setpoint_vel.set(in_X + d_a[0] * position/10000,
+                                 in_Y + d_a[1] * position/10000,
+                                 in_Z + d_a[2] * position/10000,
+                                 wait=False, reaching_distance = dist * 2)
+            setpoint_vel.set(in_X + d_a[0] * _altd,
+                             in_Y + d_a[1] * _altd,
+                             in_Z + d_a[2] * _altd,
+                             wait=True, reaching_distance = dist)
             rospy.loginfo(f"==== Wait for {_wttm} seconds")
             rospy.sleep(_wttm)
             rospy.loginfo("==== Return to origin")
-            setpoint_vel.set(in_X, in_Y, in_Z, wait=True, reaching_distance = dist)
+            for position in range(int(_altd * 10000)):
+                setpoint_vel.set(in_X + d_a[0] * _altd - d_a[0] * position/10000,
+                                 in_Y + d_a[1] * _altd - d_a[1] * position/10000,
+                                 in_Z + d_a[2] * _altd - d_a[2] * position/10000,
+                                 wait=False, reaching_distance = dist * 2)
+            setpoint_vel.set(in_X,
+                             in_Y,
+                             in_Z,
+                             wait=True, reaching_distance = dist)
             rospy.loginfo(f"==== Wait for {_wttm} seconds")
             rospy.sleep(_wttm)
 
@@ -511,8 +538,7 @@ def test_run_goto(trgt_X, trgt_Y, trgt_Z, alt, dist):
     rospy.loginfo("==== Land")
     setpoint_vel.set(trgt_X, trgt_Y, trgt_Z, wait=True, reaching_distance = dist)
     rospy.loginfo(f"++++++++ End test run")
-    
-    FLY_INTERRUPTED = True
+
     land_n_disarm()
 
 
@@ -540,13 +566,13 @@ if __name__ == '__main__':
         modes.setMode("OFFBOARD")
 
         rospy.loginfo("Takeoff")
-        setpoint_pos.set(0.0, 0.0, 2.0, wait=True)
+        setpoint_pos.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
 
         rospy.loginfo("## finalizing module of position control")
         setpoint_pos.finish()
 
         rospy.loginfo("## Initiating module of velocity control")
-        setpoint_vel.init(0.0, 0.0, 2.0)
+        setpoint_vel.init(0.0, 0.0, INITIAL_ALTITUDE)
         setpoint_vel.start()
 
         if TEST_FLIGHT_MODE:
@@ -560,20 +586,41 @@ if __name__ == '__main__':
             _X_SIZE = 4
             _Y_SIZE = 4
 
-            layout = [[sg.Graph(canvas_size=(400, 400), graph_bottom_left=(-200, -200), graph_top_right=(200, 200), background_color='red', key='graph', enable_events=True, drag_submits=True)],
-                                [sg.Button("land", key="LAND"), sg.Button("go up", key="UP"), sg.Button("go down", key="DOWN")],
-                        [sg.Button("ACTIVATE_FUZZY", key="ACTIVATE_FUZZY"), sg.Button("DEACTIVATE_FUZZY", key="DEACTIVATE_FUZZY")],
-                                [sg.InputText("45", key="YAW"), sg.Button("SEND_YAW", key="SEND_YAW")],
-                                [sg.InputText(KPx, size=(10,10), tooltip="K_P", key="K_P"),
+            layout = [
+                    [sg.Graph(canvas_size=(400, 400),
+                              graph_bottom_left=(-200, -200),
+                              graph_top_right=(200, 200),
+                              background_color='red',
+                              key='graph',
+                              enable_events=True,
+                              drag_submits=True)],
+                    [
+                        sg.Button("land", key="LAND"),
+                        sg.Button("go up", key="UP"),
+                        sg.Button("go down", key="DOWN")
+                    ],
+                    [
+                        sg.Button("ACTIVATE_FUZZY", key="ACTIVATE_FUZZY"),
+                        sg.Button("DEACTIVATE_FUZZY", key="DEACTIVATE_FUZZY")
+                    ],
+                    [
+                        sg.InputText("45", key="YAW"),
+                        sg.Button("SEND_YAW", key="SEND_YAW")
+                    ],
+                    [
+                        sg.InputText(KPx, size=(10,10), tooltip="K_P", key="K_P"),
                         sg.InputText(KIx, size=(10,10), tooltip="K_I", key="K_I"),
-                        sg.InputText(KDx, size=(10,10), tooltip="K_D", key="K_D"), sg.Button("SEND_PID", key="SEND_PID")]]
+                        sg.InputText(KDx, size=(10,10), tooltip="K_D", key="K_D"),
+                        sg.Button("SEND_PID", key="SEND_PID")
+                    ]
+                ]
             window = sg.Window('Drone control view', layout, finalize=True)
             graph = window['graph']
 
-            oval1 = graph.draw_oval((-5, 0), (5, 50), fill_color='purple', line_color='purple')
-            oval3 = graph.draw_oval((0, 5), (50, -5), fill_color='purple', line_color='purple')
-            oval2 = graph.draw_oval((5, 0), (-5, -50), fill_color='blue', line_color='blue')
-            oval4 = graph.draw_oval((0, -5), (-50, 5), fill_color='blue', line_color='blue')
+            oval1 = graph.draw_oval((-5, 0), (5,   50), fill_color='purple', line_color='purple')
+            oval3 = graph.draw_oval((0,  5), (50,  -5), fill_color='purple', line_color='purple')
+            oval2 = graph.draw_oval((5,  0), (-5, -50), fill_color='blue',   line_color='blue')
+            oval4 = graph.draw_oval((0, -5), (-50,  5), fill_color='blue',   line_color='blue')
             circleSize = 15
             circle = graph.draw_circle((0, 0), circleSize, fill_color='black', line_color='green')
 
@@ -634,15 +681,14 @@ if __name__ == '__main__':
 
         if not FLY_INTERRUPTED:
             rospy.loginfo("Fly home")
-            setpoint_vel.set(0.0, 0.0, 10.0, wait=True)
+            setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
 
             rospy.loginfo("Landing")
             # Simulate a slow landing.
-            setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
-            setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
-            setpoint_vel.set(0.0, 0.0, 0.5, wait=True)
-            setpoint_vel.set(0.0, 0.0, 0.0, wait=False)
+            for altitude in range(int(INITIAL_ALTITUDE * 10)):
+                setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE - altitude/10, wait=True)
+            setpoint_vel.set(0.0, 0.0, -0.1)
             land_n_disarm()
-            rospy.loginfo("Bye! XD")
+        rospy.loginfo("Bye! XD")
     except rospy.ROSInterruptException:
         rospy.loginfo("Don't kill me this way please!! I may be a robot but have feelings );")
