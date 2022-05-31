@@ -435,6 +435,7 @@ setpoint_vel = SetpointVelocity()
 
 
 def land_n_disarm():
+    global FLY_INTERRUPTED
     FLY_INTERRUPTED = True
     modes.setMode("AUTO.LAND")
     rospy.loginfo("disarming")
@@ -578,7 +579,7 @@ if __name__ == '__main__':
         if TEST_FLIGHT_MODE:
             rospy.loginfo("## Initiating test flight")
             # test_run(0.0, 0.0, 2.0, 0.05)
-            test_run_goto(10.0, -130.0, 0.0, 20, 0.05)
+            test_run_goto(-8.0, -318.0, -36.0, 20, 0.05)
             rospy.loginfo("## Test flight finished!!!")
         else:
             rospy.loginfo("## Opening control interface")
