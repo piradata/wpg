@@ -32,10 +32,13 @@ L_roll, L_pitch, L_yaw = [1.1, 1.1, 1.1]
 SOFTNESS = 50
 
 # set this variable to false to use the control panel
-TEST_FLIGHT_MODE = true
+TEST_FLIGHT_MODE = True
 
 # default reaching distance
 DEFAULT_REACH_DIST = 0.1
+
+# GAMBIT
+FLY_INTERRUPTED = False
 
 class DronePosition:
     def __init__(self):
@@ -426,9 +429,21 @@ modes = fcuModes()
 setpoint_pos = SetpointPosition()
 setpoint_vel = SetpointVelocity()
 
+
+def land_n_disarm():
+    modes.setMode("AUTO.LAND")
+    rospy.loginfo("disarming")
+    while state.armed:
+        # print(extend_state.landed_state)
+        if extend_state.landed_state == 1:
+            modes.setArm(False)
+        rate.sleep()
+    setpoint_vel.finish()
+    rospy.sleep(1)
+
 def test_run(in_X, in_Y, in_Z, dist):
     rospy.loginfo(f"++++++++ Begin test run")
-    rospy.loginfo(f"++++++++ Origin: X -> {in_X}, in_Y -> {in_Y}, in_Z -> {in_Z}")
+    rospy.loginfo(f"++++++++ Origin: in_X -> {in_X}, in_Y -> {in_Y}, in_Z -> {in_Z}")
     rospy.loginfo(f"==== Move {_bgcs} meters")	
 
     _bgcs = 2
@@ -481,6 +496,25 @@ def test_run(in_X, in_Y, in_Z, dist):
             rospy.loginfo(f"==== Wait for {_wttm} seconds")
             rospy.sleep(_wttm)
 
+def test_run_goto(trgt_X, trgt_Y, trgt_Z, alt, dist):
+    rospy.loginfo(f"++++++++ Begin test run")
+    orig_X = DronePose.x
+    orig_Y = DronePose.y
+    orig_Z = DronePose.z
+    rospy.loginfo(f"++++++++ Origin: orig_X -> {orig_X}, orig_Y -> {orig_Y}, orig_Z -> {orig_Z}")
+    rospy.loginfo(f"++++++++ Target: trgt_X -> {trgt_X}, trgt_Y -> {trgt_Y}, trgt_Z -> {trgt_Z}")
+
+    rospy.loginfo(f"==== Go up {alt} meters")
+    setpoint_vel.set(orig_X, orig_Y, orig_Z + alt, wait=True, reaching_distance = dist)	
+    rospy.loginfo("==== Move to target")
+    setpoint_vel.set(trgt_X, trgt_Y, orig_Z + alt, wait=True, reaching_distance = dist)
+    rospy.loginfo("==== Land")
+    setpoint_vel.set(trgt_X, trgt_Y, trgt_Z, wait=True, reaching_distance = dist)
+    rospy.loginfo(f"++++++++ End test run")
+    
+    FLY_INTERRUPTED = True
+    land_n_disarm()
+
 
 if __name__ == '__main__':
     try:
@@ -517,9 +551,9 @@ if __name__ == '__main__':
 
         if TEST_FLIGHT_MODE:
             rospy.loginfo("## Initiating test flight")
-            test_run(0.0, 0.0, 2.0, 0.05)
+            # test_run(0.0, 0.0, 2.0, 0.05)
+            test_run_goto(10.0, -130.0, 0.0, 20, 0.05)
             rospy.loginfo("## Test flight finished!!!")
-
         else:
             rospy.loginfo("## Opening control interface")
 
@@ -598,25 +632,17 @@ if __name__ == '__main__':
                 except KeyboardInterrupt:
                     pass
 
-        rospy.loginfo("Fly home")
-        setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
+        if not FLY_INTERRUPTED:
+            rospy.loginfo("Fly home")
+            setpoint_vel.set(0.0, 0.0, 10.0, wait=True)
 
-        rospy.loginfo("Landing")
-        # Simulate a slow landing.
-        setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
-        setpoint_vel.set(0.0, 0.0, 0.0, wait=True)
-        setpoint_vel.set(0.0, 0.0, -0.1)
-        modes.setMode("AUTO.LAND")
-
-        rospy.loginfo("disarming")
-        while state.armed:
-            # print(extend_state.landed_state)
-            if extend_state.landed_state == 1:
-                modes.setArm(False)
-            rate.sleep()
-
-        setpoint_vel.finish()
-        rospy.sleep(1)
-        rospy.loginfo("Bye! XD")
+            rospy.loginfo("Landing")
+            # Simulate a slow landing.
+            setpoint_vel.set(0.0, 0.0, 2.0, wait=True)
+            setpoint_vel.set(0.0, 0.0, 1.0, wait=True)
+            setpoint_vel.set(0.0, 0.0, 0.5, wait=True)
+            setpoint_vel.set(0.0, 0.0, 0.0, wait=False)
+            land_n_disarm()
+            rospy.loginfo("Bye! XD")
     except rospy.ROSInterruptException:
         rospy.loginfo("Don't kill me this way please!! I may be a robot but have feelings );")
