@@ -54,11 +54,7 @@ for i = 1:length(Controllers)
     velreftimeNsecPoints = cellfun(@(m) double(m.Header.Stamp.Nsec),data_ref_vel);
     velreftimeSecPoints = cellfun(@(m) double(m.Header.Stamp.Sec),data_ref_vel);
     velreftime = (velreftimeNsecPoints./1000000000 + velreftimeSecPoints);
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    refxPoints = cellfun(@(m) double(m.Twist.Linear.X),data_ref_vel);
-    refyPoints = cellfun(@(m) double(m.Twist.Linear.Y),data_ref_vel);
-    
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     FigName = strcat(Controller, "_", "all");
     all_fig = figure('Name', FigName,'Position', get(0, 'Screensize'));
@@ -140,11 +136,7 @@ for i = 1:length(Controllers)
     ti = linspace(stime,ftime,targetSize(1));
     
     xPointsRef_interpolated = interp1(t,xPointsRef,ti)';
-    plot(ptime - BAG.StartTime, xPoints - xPointsRef_interpolated,'DisplayName','X position error');
-%     hold on
-%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
-%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
-%     hold off
+    plot(ptime - BAG.StartTime, xPointsRef_interpolated - xPoints,'DisplayName','X position error');
     xlim([0 inf]);
     title('Position error X');
     legend
@@ -166,11 +158,7 @@ for i = 1:length(Controllers)
     ti = linspace(stime,ftime,targetSize(1));
     
     yPointsRef_interpolated = interp1(t,yPointsRef,ti)';
-    plot(ptime - BAG.StartTime, yPoints - yPointsRef_interpolated,'DisplayName','Y position error');
-%     hold on
-%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
-%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
-%     hold off
+    plot(ptime - BAG.StartTime, yPointsRef_interpolated - yPoints,'DisplayName','Y position error');
     xlim([0 inf]);
     title('Position error Y');
     legend
@@ -192,11 +180,7 @@ for i = 1:length(Controllers)
     ti = linspace(stime,ftime,targetSize(1));
     
     zPointsRef_interpolated = interp1(t,zPointsRef,ti)';
-    plot(ptime - BAG.StartTime, zPoints - zPointsRef_interpolated,'DisplayName','Z position error');
-%     hold on
-%     plot(ptime - BAG.StartTime, yPoints,'DisplayName','Y position');
-%     plot(ptime - BAG.StartTime, yPointsRef_interpolated,'DisplayName','Y position REF interpolated');
-%     hold off
+    plot(ptime - BAG.StartTime, zPointsRef_interpolated - zPoints,'DisplayName','Z position error');
     xlim([0 inf]);
     title('Position error Z');
     legend
