@@ -210,3 +210,71 @@ legend
 
 set(all_fig, 'PaperPositionMode', 'auto');
 exportgraphics(all_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+FigName = "all_fig_derivative";
+all_fig_derivative = figure('Name', FigName, 'Position', get(0, 'Screensize'));
+
+py1 = xPointsRef_interpolated{1} - xPoints{1};
+px1 = time_x_1 - first_valid_time_x_1;
+dy1=diff(py1)./diff(px1);
+py2 = xPointsRef_interpolated{2} - xPoints{2};
+px2 = time_x_2 - first_valid_time_x_2;
+dy2=diff(py2)./diff(px2);
+
+pos_x = subplot(3, 1, 1);
+plot(px1(2:end),dy1,'DisplayName','SMC position error derivative');
+hold on
+plot(px2(2:end),dy2,'DisplayName','PID position error derivative');
+hold off
+xlim([0 inf]);
+xlabel('Time[s]');
+ylabel('Distance Error Derivative[m/s]')
+title('Position error derivative X');
+legend
+
+
+
+py1 = yPointsRef_interpolated{1} - yPoints{1};
+px1 = time_y_1 - first_valid_time_y_1;
+dy1=diff(py1)./diff(px1);
+py2 = yPointsRef_interpolated{2} - yPoints{2};
+px2 = time_y_2 - first_valid_time_y_2;
+dy2=diff(py2)./diff(px2);
+
+pos_y = subplot(3, 1, 2);
+plot(px1(2:end),dy1,'DisplayName','SMC position error derivative');
+hold on
+plot(px2(2:end),dy2,'DisplayName','PID position error derivative');
+hold off
+xlim([0 inf]);
+xlabel('Time[s]');
+ylabel('Distance Error Derivative[m/s]')
+title('Position error derivative Y');
+legend
+
+
+
+py1 = zPointsRef_interpolated{1} - zPoints{1};
+px1 = time_z_1 - first_valid_time_z_1;
+dy1=diff(py1)./diff(px1);
+py2 = zPointsRef_interpolated{2} - zPoints{2};
+px2 = time_z_2 - first_valid_time_z_2;
+dy2=diff(py2)./diff(px2);
+
+pos_z = subplot(3, 1, 3);
+plot(px1(2:end),dy1,'DisplayName','SMC position error derivative');
+hold on
+plot(px2(2:end),dy2,'DisplayName','PID position error derivative');
+hold off
+xlim([0 inf]);
+xlabel('Time[s]');
+ylabel('Distance Error Derivative[m/s]')
+title('Position error derivative Z');
+legend
+
+
+
+set(all_fig_derivative, 'PaperPositionMode', 'auto');
+exportgraphics(all_fig_derivative, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
