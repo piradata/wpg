@@ -143,7 +143,7 @@ ylabel('Absolute Position Y[m]')
 zlabel('Absolute Position Z[m]')
 legend('Location', 'northeast');
 set(path_complete_fig, 'PaperPositionMode', 'auto');
-exportgraphics(flower_complete_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
+exportgraphics(path_complete_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
