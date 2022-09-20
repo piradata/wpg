@@ -42,12 +42,13 @@ for i = 1:length(Controllers)
     topic_vel = select(BAG{i}, 'Topic', '/mavros/local_position/velocity_local');
     topic_ref_vel = select(BAG{i}, 'Topic', '/mavros/setpoint_velocity/cmd_vel');
     topic_fuz = select(BAG{i}, 'Topic', '/wpg/fuzzy_values');
+    topic_sensor_angacc = select(BAG{i}, 'Topic', '/mavros/local_position/odom');
     
     data_pos = readMessages(topic_pos,'DataFormat','struct');
     data_pos_ref = readMessages(topic_pos_ref,'DataFormat','struct');
     data_vel = readMessages(topic_vel,'DataFormat','struct');
     data_ref_vel = readMessages(topic_ref_vel,'DataFormat','struct');
-    data_fuz = readMessages(topic_fuz,'DataFormat','struct');
+    data_sensor_angacc = readMessages(topic_sensor_angacc,'DataFormat','struct');
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     xPoints{i} = cellfun(@(m) double(m.Pose.Position.X),data_pos);
@@ -80,6 +81,14 @@ for i = 1:length(Controllers)
     velreftimeNsecPoints = cellfun(@(m) double(m.Header.Stamp.Nsec),data_ref_vel);
     velreftimeSecPoints = cellfun(@(m) double(m.Header.Stamp.Sec),data_ref_vel);
     velreftime{i} = (velreftimeNsecPoints./1000000000 + velreftimeSecPoints);
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    xAngAccelPoints{i} = cellfun(@(m) double(m.Twist.Twist.Angular.X),data_sensor_angacc);
+    yAngAccelPoints{i} = cellfun(@(m) double(m.Twist.Twist.Angular.Y),data_sensor_angacc);
+    zAngAccelPoints{i} = cellfun(@(m) double(m.Twist.Twist.Angular.Z),data_sensor_angacc);
+    AngAcceltimeNsecPoints = cellfun(@(m) double(m.Header.Stamp.Nsec),data_sensor_angacc);
+    AngAcceltimeSecPoints = cellfun(@(m) double(m.Header.Stamp.Sec),data_sensor_angacc);
+    AngAcceltime{i} = (AngAcceltimeNsecPoints./1000000000 + AngAcceltimeSecPoints);
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     time = ptimeRef{i} - BAG{i}.StartTime;
@@ -127,6 +136,12 @@ for i = 1:length(Controllers)
     zPointsRef_interpolated{i} = interp1(t, zPointsRef{i}, ti)';
 end
 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Path plot
+
 FigName = strcat("path_complete");
 path_complete_fig = figure('Name', FigName, 'Position', get(0, 'Screensize'));
 plot3(xPointsRef{1},yPointsRef{1},zPointsRef{1},'DisplayName', 'Desired movement');
@@ -144,7 +159,6 @@ zlabel('Absolute Position Z[m]')
 legend('Location', 'northeast');
 set(path_complete_fig, 'PaperPositionMode', 'auto');
 exportgraphics(path_complete_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 FigName = "all_fig";
@@ -275,3 +289,44 @@ for axis = 1:3
 end
 set(all_fig_derivative, 'PaperPositionMode', 'auto');
 exportgraphics(all_fig_derivative, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sensor plot
+
+FigName = strcat("sensors");
+sensors_fig = figure('Name', FigName, 'Position', get(0, 'Screensize'));
+
+subplot(3,1,1)
+plot(AngAcceltime{1} - BAG{1}.StartTime,xAngAccelPoints{1},'DisplayName', 'Ang Accel X SMC with wind');
+hold on
+plot(AngAcceltime{2} - BAG{2}.StartTime,xAngAccelPoints{2},'DisplayName', 'Ang Accel X PID with wind');
+hold off
+title('angular acceleration about the FRD body frame XYZ-axis in rad/s^2');
+xlabel('Time t[s]');
+ylabel('Sensor data ang accel [rad/s^2]')
+legend('Location', 'northeast');
+
+subplot(3,1,2)
+plot(AngAcceltime{1} - BAG{1}.StartTime,yAngAccelPoints{1},'DisplayName', 'Ang Accel Y SMC with wind');
+hold on
+plot(AngAcceltime{2} - BAG{2}.StartTime,yAngAccelPoints{2},'DisplayName', 'Ang Accel Y PID with wind');
+hold off
+title('angular acceleration about the FRD body frame XYZ-axis in rad/s^2');
+xlabel('Time t[s]');
+ylabel('Sensor data ang accel [rad/s^2]')
+legend('Location', 'northeast');
+
+subplot(3,1,3)
+plot(AngAcceltime{1} - BAG{1}.StartTime,zAngAccelPoints{1},'DisplayName', 'Ang Accel Z SMC with wind');
+hold on
+plot(AngAcceltime{2} - BAG{2}.StartTime,zAngAccelPoints{2},'DisplayName', 'Ang Accel Z PID with wind');
+hold off
+title('angular acceleration about the FRD body frame XYZ-axis');
+xlabel('Time t[s]');
+ylabel('Sensor data ang accel [rad/s^2]')
+legend('Location', 'northeast');
+
+
+set(sensors_fig, 'PaperPositionMode', 'auto');
+exportgraphics(sensors_fig, strcat(fullfile(graph_folder, FigName), ".png"), 'Resolution', 900);
+
