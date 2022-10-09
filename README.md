@@ -99,7 +99,6 @@ pip3 install toml numpy packaging jinja2
 sudo apt install libgstreamer1.0-dev
 sudo apt install genromfs ninja-build exiftool astyle
 sudo apt install libgstreamer-plugins-base1.0-dev
-sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
 ```
 
 - Also, if you get an error about lib lzma, that must means that you are using python from an virtual environment and building from source, if that is the case you may need to rebuild the python install after having libs like liblzma-dev in the system. If you are running python from an virtual env I assume you know what you are doing but just in case the command I use to rebuild is this (using asdf):
@@ -124,6 +123,13 @@ If the compiler ends with success, just open another terminal and run the follow
 ```shell
 # connect the ros node to the flight control unit thought mavlink to be able to read/write on mavros topics (also assuming PX4 project)
 roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'
+```
+
+Also, if this breaks because of `eographicLib exception: File not readable`, you can fix with this:
+
+```bash
+sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
+wget -O - https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh | sudo bash
 ```
 
 ### Running the WPG package
