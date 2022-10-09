@@ -39,7 +39,7 @@ DEFAULT_REACH_DIST = 0.1
 DEFAULT_REACH_DIST_FOR_DEBUG = 0.05
 
 # initial altitude
-INITIAL_ALTITUDE = 2.0
+INITIAL_ALTITUDE = 0.5
 
 # GAMBIT
 FLY_INTERRUPTED = False
@@ -580,7 +580,8 @@ if __name__ == '__main__':
         if TEST_FLIGHT_MODE:
             rospy.loginfo("## Initiating test flight")
             # test_run(0.0, 0.0, 2.0, 0.05)
-            test_run_goto(-8.0, -318.0, -36.0, 20, 0.05)
+            # test_run_goto(-8.0, -318.0, -36.0, 20, 0.05)
+            test_run_goto(100.0, 100.0, 1.0, 30, 0.1)
             rospy.loginfo("## Test flight finished!!!")
         else:
             rospy.loginfo("## Opening control interface")
