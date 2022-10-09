@@ -2,10 +2,12 @@
 
 A graphical interface to test/control a drone inside ROS (Robotic operating system).
 
-The acronymous mean "**W**ay**P**oing **G**enerator" as this generates points for the drone to follow during the simulation sending messages on the position_setpoint or velocity_setpoint topics.
+The acronymous means "**W**ay**P**oing **G**enerator" as this generates points for the drone to follow during the simulation sending messages on the position_setpoint or velocity_setpoint topics.
 
 ## Notes
 This project assumes that you are using PX4, Gazebo, and the version Noetic Ninjemys of ROS1 for Ubuntu 20.04 (Focal) release.
+
+The "how to use" section also explains how to install PX4, gazebo and ROS.
 
 ## How to use
 
@@ -37,7 +39,7 @@ cd ~/catkin_ws/
 catkin_make
 ```
 
-If catkin_make fails, probably you are using an python environment manager and ROS is stupid when installing the dependencies, that should fix:
+If catkin_make fails, probably you are using an python environment manager and ROS is stupid when installing the dependencies because he installs on the system-wide python instead, that should fix:
 
 ```
 pip3 install rosdep rosinstall rosinstall-generator wstool wheel empy catkin_pkg
@@ -61,7 +63,7 @@ sudo apt install ros-noetic-libmavconn
 sudo apt install ros-noetic-mavros
 ```
 
-Now we have it, but we also need the drone control algo to run this. There is a fork of the PX4 Firmware codebase that had the internal controller on the most internal cascade control loop to be an SMC controller instead of an PID controller. This inner loop is responsible to control the drone angular rate. Lets clone this inside an specific folder also:
+Now we have it, but we also need the drone control algorithm to run with this. There is a fork of the PX4 Firmware codebase that had the internal controller on the most internal cascade control loop to be an SMC controller instead of an PID controller. This inner loop is responsible to control the drone angular rate. Lets clone this inside an specific folder also:
 
 ```
 mkdir -p ~/src/
@@ -72,32 +74,64 @@ cd Firmware/
 
 After that, to run a simulation on ROS with a drone inside that uses mavlink protocol and topics, just run the following commands
 
+### Running the simulation
+
 ```shell
-# this one assuming you are building the simulation based on PX4 project and uses gazebo as the simulation environment
+# This one assuming you are building the simulation based on PX4 project and uses gazebo as the simulation environment 
 make px4_sitl_default gazebo_iris
 ```
 
-**It is possible that the compile fails because one of the following packages are missing:**
+OBS: If you want to use an specific word file for testing set it with `PX4_SITL_WORLD:=$(pwd)/Tools/sitl_gazebo/worlds/empty.world` at the end of the make command
+
+#### Possible problems
+
+- It is possible that the compile fails because one of the following packages are missing, so just install them:
 
 ```bash
 sudo apt install liblzma-dev lzma
 pip3 install toml numpy packaging jinja2
 sudo apt install libgstreamer1.0-dev
 sudo apt install genromfs ninja-build exiftool astyle
+sudo apt install libgstreamer-plugins-base1.0-dev
 ```
 
-Also, if you get an error about lib lzma, that must means that you are using python from an virtual environment and building from source, if that is the case you may need to rebuild the python install after having libs like liblzma-dev in the system. If you are running python from an virtual env I assume you know what you are doing but just in case the command I use to rebuild is this (using asdf):
-```
+- Also, if you get an error about lib lzma, that must means that you are using python from an virtual environment and building from source, if that is the case you may need to rebuild the python install after having libs like liblzma-dev in the system. If you are running python from an virtual env I assume you know what you are doing but just in case the command I use to rebuild is this (using asdf):
+
+```bash
 asdf uninstall python 3.10.5
 asdf install python 3.10.5
 ```
 
-If the compiler ends with success, just end continue
+- Another problem can can occur is `c++: fatal error: Killed signal terminated program cc1plus`, that means the compiler is using more memory than the system has. To bypass this you can compile single core with `make -j1` instead of just `make` or increase the size of your swap partition.
+
+- And if you have any problems with gstreamer lib as `gst_app_src_push_internal: assertion 'GST_IS_APP_SRC (appsrc)' failed` or `g_object_set: assertion 'G_IS_OBJECT` don't hesitate to do the following:
+
+```bash
+sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+```
+
+### Connecting the mavros node
+
+If the compiler ends with success, just open another terminal and run the following command (keep the terminal with make open)
 
 ```shell
 # connect the ros node to the flight control unit thought mavlink to be able to read/write on mavros topics (also assuming PX4 project)
 roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'
+```
 
+### Running the WPG package
+
+Now open another terminal and run the following command (keep the terminal with make and the terminal with mavros both open)
+
+```shell
 # start the graphical simulation
 rosrun wpg v6_fuzzy_vel_smc_py3.py
 ```
+
+## Tools
+
+On this repository there is also a matlab script `matlab_plotter_mavros_v2.m` that is used to plot the data of the mission based on a BAG file as input. To generate a BAG file that record the simulation data run the following in another terminal while the simulation is running:
+
+`rosbag record -a -O sample_name`
+
+That will generate a `sample_name.BAG` file on the current directory you are in.
