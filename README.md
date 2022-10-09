@@ -141,6 +141,12 @@ Now open another terminal and run the following command (keep the terminal with 
 rosrun wpg v6_fuzzy_vel_smc_py3.py
 ```
 
+If the `PySimpleGUI27` python lib is missing, just install it!
+
+```bash
+pip3 install PySimpleGUI27
+```
+
 ## Tools
 
 On this repository there is also a matlab script `matlab_plotter_mavros_v2.m` that is used to plot the data of the mission based on a BAG file as input. To generate a BAG file that record the simulation data run the following in another terminal while the simulation is running:
