@@ -85,7 +85,7 @@ OBS: By default this command will use the `iris.world` world file, but if you wa
 
 OBS²: The model of drone this command runs is the file `iris.sdf.jinja` on folder `/src/Firmware/Tools/sitl_gazebo/models/iris`. You can either modify the model manually or set to another one changing `gazebo_iris` to `gazebo_typhoon_h480`.
 
-OBS³: For a full explanation of the ways of running this please visit `https://docs.px4.io/main/en/dev_setup/building_px4.html`
+OBS³: For a full explanation of the ways of running this please visit [PX4 Guide - Building PX4](https://docs.px4.io/main/en/dev_setup/building_px4.html). There are also the solution of some of the problem mentioned below on the "Possible problems" section.
 
 #### Possible problems
 
