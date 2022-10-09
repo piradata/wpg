@@ -2,7 +2,7 @@
 
 A graphical interface to test/control a drone inside ROS (Robotic operating system).
 
-The acronymous means "**W**ay**P**oing **G**enerator" as this generates points for the drone to follow during the simulation sending messages on the position_setpoint or velocity_setpoint topics.
+The acronymous means "**WayPoint Generator**" as this generates points for the drone to follow during the simulation sending messages on the position_setpoint or velocity_setpoint topics.
 
 ## Notes
 This project assumes that you are using PX4, Gazebo, and the version Noetic Ninjemys of ROS1 for Ubuntu 20.04 (Focal) release.
