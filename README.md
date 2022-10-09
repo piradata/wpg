@@ -99,6 +99,7 @@ pip3 install toml numpy packaging jinja2
 sudo apt install libgstreamer1.0-dev
 sudo apt install genromfs ninja-build exiftool astyle
 sudo apt install libgstreamer-plugins-base1.0-dev
+sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
 ```
 
 - Also, if you get an error about lib lzma, that must means that you are using python from an virtual environment and building from source, if that is the case you may need to rebuild the python install after having libs like liblzma-dev in the system. If you are running python from an virtual env I assume you know what you are doing but just in case the command I use to rebuild is this (using asdf):
