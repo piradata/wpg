@@ -81,7 +81,11 @@ After that, to run a simulation on ROS with a drone inside that uses mavlink pro
 make px4_sitl_default gazebo_iris
 ```
 
-OBS: If you want to use an specific word file for testing set it with `PX4_SITL_WORLD:=$(pwd)/Tools/sitl_gazebo/worlds/empty.world` at the end of the make command
+OBS: By default this command will use the `iris.world` world file, but if you want to use an specific word file for testing set it with `PX4_SITL_WORLD:=$(pwd)/Tools/sitl_gazebo/worlds/empty.world` at the end of the make command.
+
+OBS²: The model of drone this command runs is the file `iris.sdf.jinja` on folder `/src/Firmware/Tools/sitl_gazebo/models/iris`. You can either modify the model manually or set to another one changing `gazebo_iris` to `gazebo_typhoon_h480`.
+
+OBS³: For a full explanation of the ways of running this please visit `https://docs.px4.io/main/en/dev_setup/building_px4.html`
 
 #### Possible problems
 
