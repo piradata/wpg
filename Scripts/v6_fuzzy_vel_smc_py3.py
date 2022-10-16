@@ -581,7 +581,7 @@ if __name__ == '__main__':
             rospy.loginfo("## Initiating test flight")
             # test_run(0.0, 0.0, 2.0, 0.05)
             # test_run_goto(-8.0, -318.0, -36.0, 20, 0.05)
-            test_run_goto(100.0, 100.0, 1.0, 30, 0.1)
+            test_run_goto(80.0, 80.0, 1.0, 30, 0.1)
             rospy.loginfo("## Test flight finished!!!")
         else:
             rospy.loginfo("## Opening control interface")
