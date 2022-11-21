@@ -575,7 +575,7 @@ if __name__ == '__main__':
         rospy.loginfo("## Initiating module of velocity control")
         setpoint_vel.init(0.0, 0.0, INITIAL_ALTITUDE)
         setpoint_vel.start()
-        setpoint_pos.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
+        setpoint_vel.set(0.0, 0.0, INITIAL_ALTITUDE, wait=True)
 
         if TEST_FLIGHT_MODE:
             rospy.loginfo("## Initiating test flight")
