@@ -173,3 +173,17 @@ On this repository there is also a matlab script `matlab_plotter_mavros_v2.m` th
 `rosbag record -a -O sample_name`
 
 That will generate a `sample_name.BAG` file on the current directory you are in.
+
+## Screenshots
+
+![image](https://user-images.githubusercontent.com/16529503/232741516-008664d9-df62-415c-b34a-e35700e8c785.png)
+
+![image](https://user-images.githubusercontent.com/16529503/232742277-d9336f5e-b539-48cd-8247-166015bdc6b1.png)
+
+![image](https://user-images.githubusercontent.com/16529503/232742358-de88f516-e510-4f0e-9e54-68877984b0ea.png)
+
+![image](https://user-images.githubusercontent.com/16529503/232742530-44aeb25c-c152-4e86-a2d6-574f22b18c4a.png)
+
+![image](https://user-images.githubusercontent.com/16529503/232742685-3c1e6941-4ad4-4cfb-b9a6-452cab69352e.png)
+
+![image](https://user-images.githubusercontent.com/16529503/232742798-1b5cfc9d-bbf6-42ac-96cb-9907f2a04fbd.png)
