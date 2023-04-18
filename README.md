@@ -75,7 +75,11 @@ sudo apt install ros-noetic-libmavconn
 sudo apt install ros-noetic-mavros
 ```
 
-Now we have it, but we also need the drone control algorithm to run with this. There is a fork of the PX4 Firmware codebase that had the internal controller on the most internal cascade control loop to be an SMC controller instead of an PID controller. This inner loop is responsible to control the drone angular rate. Lets clone this inside an specific folder also:
+Now we have it, but we also need the drone control algorithm to run with this.
+
+[There is](https://github.com/piradata/PX4-Autopilot) a fork of the PX4 Firmware codebase that had the internal controller on the most internal cascade control loop modified to be an SMC controller instead of an PID controller. This inner loop is responsible to control the drone angular rate. 
+
+Lets clone this inside an specific folder.
 
 ```
 mkdir -p ~/src/
