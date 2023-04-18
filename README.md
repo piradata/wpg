@@ -174,6 +174,21 @@ On this repository there is also a matlab script `matlab_plotter_mavros_v2.m` th
 
 That will generate a `sample_name.BAG` file on the current directory you are in.
 
+Them, edit the file `matlab_plotter_mavros_v2.m` or `matlab_plotter_mavros.m` in the root folder of this project and put the bag file there. 
+
+```matlab
+% Controllers = ["SMC_PID_8", "SMC_PID_8_WW", "PID", "PID_WW"];
+Controllers = ["sample_name"];
+```
+
+Them run the script. A series of plots will be generated regarding the data of the flight.
+
+![PID_flower](https://user-images.githubusercontent.com/16529503/232749541-c9894713-d90e-43ec-a349-a0b29c9750f3.png)
+
+![driv_erro_novo_com_vento](https://user-images.githubusercontent.com/16529503/232749570-2f9de2ee-cd87-4fb8-b074-c21955a4d5fd.png)
+
+![path_complete_four_way](https://user-images.githubusercontent.com/16529503/232749640-30118156-5bcf-41cb-b64e-70bcddadc413.png)
+
 ## Screenshots
 
 ![image](https://user-images.githubusercontent.com/16529503/232741516-008664d9-df62-415c-b34a-e35700e8c785.png)
