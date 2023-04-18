@@ -6,6 +6,15 @@ The acronymous means "**WayPoint Generator**" as this generates points for the d
 
 Any contribuition is wellcome. Just open a PR if you have something you want to improve in the code and I will review when/if I have time.
 
+## reference articles
+Some articles that cited the use of this program:
+
+#### 2021
+- [Unmanned Aerial Vehicles Motion Control with Fuzzy Tuning of Cascaded-PID Gains](https://sciprofiles.com/publication/view/7c10a222af668029a1b5a761268e5589)
+- [Hybrid PID-Fuzzy controller for autonomous UAV stabilization](https://ieeexplore.ieee.org/abstract/document/9529680)
+#### 2022
+- [Fuzzy Gain-Scheduling PID for UAV Position and Altitude Controllers](https://sciprofiles.com/publication/view/73ddf2b8e67dc6924f095988241d2912)
+
 ## Notes
 This project assumes that you are using PX4, Gazebo, and the version Noetic Ninjemys of ROS1 for Ubuntu 20.04 (Focal) release.
 
