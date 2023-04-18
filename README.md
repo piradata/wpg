@@ -6,7 +6,7 @@ The acronymous means "**WayPoint Generator**" as this generates points for the d
 
 Any contribuition is wellcome. Just open a PR if you have something you want to improve in the code and I will review when/if I have time.
 
-## reference articles
+## Reference articles
 Some articles that cited the use of this program:
 
 #### 2021
