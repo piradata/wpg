@@ -16,6 +16,11 @@ Some articles that cited the use of this program:
 - [Fuzzy Gain-Scheduling PID for UAV Position and Altitude Controllers](https://sciprofiles.com/publication/view/73ddf2b8e67dc6924f095988241d2912) (Journal)
 #### 2023
 - Sliding Mode Controller Applied to Autonomous UAV Operation in Marine Small Cargo Transport (In review)
+
+## Videos
+
+https://www.youtube.com/watch?v=9c_JVZtPlU8
+
 ## Notes
 This project assumes that you are using PX4, Gazebo, and the version Noetic Ninjemys of ROS1 for Ubuntu 20.04 (Focal) release.
 
