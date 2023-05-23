@@ -150,7 +150,7 @@ If the compiler ends with success, just open another terminal and run the follow
 roslaunch mavros px4.launch fcu_url:='udp://:14550@127.0.0.1:14555'
 ```
 
-Also, if this breaks because of `eographicLib exception: File not readable`, you can fix with this:
+Also, if this breaks because of `geographicLib exception: File not readable`, you can fix with this:
 
 ```bash
 sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
