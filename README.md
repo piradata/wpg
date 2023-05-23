@@ -4,7 +4,7 @@ A graphical interface to test/control a drone inside ROS (Robotic operating syst
 
 The acronymous means "**WayPoint Generator**" as this generates points for the drone to follow during the simulation sending messages on the position_setpoint or velocity_setpoint topics.
 
-Any contribuition is wellcome. Just open a PR if you have something you want to improve in the code and I will review when/if I have time.
+Any contribuition is welcome. Just open a PR if you have something you want to improve in the code and I will review when/if I have time.
 
 ## Reference articles
 Some articles that cited the use of this program:
