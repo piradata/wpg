@@ -28,6 +28,10 @@ The "how to use" section also explains how to install PX4, gazebo and ROS.
 
 ## How to use
 
+WIP
+
+## How to install/setup
+
 First we need to have ubuntu installed on a appropriated version. For that install ubuntu Focal Fossa so that we can install ROS Noetic.
 
 To confirm that we have ubuntu on the correct version run `cat /etc/os-release` and the output should be something like that:
