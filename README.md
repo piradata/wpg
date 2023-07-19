@@ -15,7 +15,7 @@ Some articles that cited the use of this program:
 #### 2022
 - [Fuzzy Gain-Scheduling PID for UAV Position and Altitude Controllers](https://sciprofiles.com/publication/view/73ddf2b8e67dc6924f095988241d2912) (Journal)
 #### 2023
-- Sliding Mode Controller Applied to Autonomous UAV Operation in Marine Small Cargo Transport (In review)
+- [Sliding Mode Controller Applied to Autonomous UAV Operation in Marine Small Cargo Transport](https://ieeexplore.ieee.org/document/10185965) (Journal)
 
 ## Videos
 
