@@ -1,0 +1,27 @@
+[project]
+name = "wpg"
+version = "0.1.0"
+description = "Waypoint Generator for ROS/PX4 drone simulation"
+readme = "README.md"
+requires-python = ">=3.8,<3.11"
+dependencies = [
+    "jinja2",
+    "numpy",
+    "packaging",
+    "PySimpleGUI",
+    "toml",
+    "rosdep",
+    "rosinstall",
+    "rosinstall-generator",
+    "wstool",
+    "wheel",
+    "empy",
+    "catkin_pkg"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = false

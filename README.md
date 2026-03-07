@@ -60,10 +60,10 @@ cd ~/catkin_ws/
 catkin_make
 ```
 
-If catkin_make fails, probably you are using an python environment manager and ROS is stupid when installing the dependencies because he installs on the system-wide python instead, that should fix:
+If catkin_make fails, probably you are using a python environment manager and ROS installed dependencies in the system python instead. Sync the project environment again:
 
 ```
-pip3 install rosdep rosinstall rosinstall-generator wstool wheel empy catkin_pkg
+uv sync
 ```
 
 Also lets just now change the setup file called on zshrc or bashrc that was referenced on the installation step to `source ~/catkin_ws/devel/setup.zsh` (or setup.bash if you don't use zsh)
@@ -75,6 +75,21 @@ cd ~/catkin_ws/src/
 git clone https://github.com/piradata/wpg.git wpg
 cd ~/catkin_ws/
 catkin_make
+```
+
+### Python dependencies (uv)
+
+Inside the repository folder, install Python dependencies with uv:
+
+```bash
+cd ~/catkin_ws/src/wpg
+uv sync
+```
+
+If you do not have uv installed yet, install it first:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 Its possible that some other packages are missing when running `catkin_make`, if so the following commands may help:
@@ -124,7 +139,7 @@ make px4_sitl_default gazebo_iris
 
 ```bash
 sudo apt install liblzma-dev lzma
-pip3 install toml numpy packaging jinja2
+uv sync
 sudo apt install libgstreamer1.0-dev
 sudo apt install genromfs ninja-build exiftool astyle
 sudo apt install libgstreamer-plugins-base1.0-dev
@@ -167,13 +182,13 @@ Now open another terminal and run the following command (keep the terminal with 
 
 ```shell
 # start the graphical simulation
-rosrun wpg v6_fuzzy_vel_smc_py3.py
+uv run -- rosrun wpg v6_fuzzy_vel_smc_py3.py
 ```
 
-If the `PySimpleGUI` python lib is missing, just install it!
+If the `PySimpleGUI` python lib is missing, sync dependencies again:
 
 ```bash
-pip3 install PySimpleGUI
+uv sync
 ```
 
 ## Tools
