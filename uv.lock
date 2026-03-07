@@ -102,7 +102,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "numpy" },
     { name = "packaging" },
-    { name = "pysimplegui27" },
+    { name = "PySimpleGUI" },
     { name = "toml" },
 ]
 
@@ -111,6 +111,6 @@ requires-dist = [
     { name = "jinja2" },
     { name = "numpy" },
     { name = "packaging" },
-    { name = "pysimplegui27" },
+    { name = "PySimpleGUI" },
     { name = "toml" },
 ]

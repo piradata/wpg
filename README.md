@@ -170,10 +170,10 @@ Now open another terminal and run the following command (keep the terminal with 
 rosrun wpg v6_fuzzy_vel_smc_py3.py
 ```
 
-If the `PySimpleGUI27` python lib is missing, just install it!
+If the `PySimpleGUI` python lib is missing, just install it!
 
 ```bash
-pip3 install PySimpleGUI27
+pip3 install PySimpleGUI
 ```
 
 ## Tools

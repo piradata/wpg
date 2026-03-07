@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import PySimpleGUI27 as sg
+import PySimpleGUI as sg
 
 # Usage of Graph element.
 

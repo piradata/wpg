@@ -9,14 +9,16 @@ from wpg.msg import fuzzy as fuzzy_msg
 from wpg.msg import defuzzyfied as defuzzy_msg
 from wpg.msg import vehicle_smc_gains as vehicle_smc_gains_msg
 
+import mavros
+import mavros_msgs
 from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
+import rospy
 
 import math
 import numbers
-# TODO: update PySimpleGUI27 to PySimpleGUI 
-import PySimpleGUI27 as sg
-import _thread as thread
+import PySimpleGUI as sg
+import threading
 import time
 
 # PID constants
@@ -45,13 +47,26 @@ INITIAL_ALTITUDE = 0.5
 # GAMBIT
 FLY_INTERRUPTED = False
 
+ALLOWED_FLIGHT_MODES = (
+    "STABILIZED",
+    "OFFBOARD",
+    "ALTCTL",
+    "POSCTL",
+    "AUTO.LAND",
+)
+
+
+def clamp(value, minimum, maximum):
+    return max(min(value, maximum), minimum)
+
 class DronePosition:
     def __init__(self):
         self.x=0.0
         self.y=0.0
         self.z=0.0
+
     def xyz(self):
-        return [self.x, self.x, self.x] 
+        return [self.x, self.y, self.z]
 
 class DroneVelocity:
     def __init__(self):
@@ -59,7 +74,58 @@ class DroneVelocity:
         self.y=0.0
         self.z=0.0
 
-class fcuModes:
+
+class FuzzyDiff:
+    def __init__(self):
+        self.P_X = 0.0
+        self.I_X = 0.0
+        self.D_X = 0.0
+        self.P_Y = 0.0
+        self.I_Y = 0.0
+        self.D_Y = 0.0
+        self.P_Z = 0.0
+        self.I_Z = 0.0
+        self.D_Z = 0.0
+
+
+class ErrorObj(object):
+    def __init__(self, InitValue=0, WindUp=5.0):
+        self.__act = InitValue
+        self.old = InitValue
+        self.__Intg = 0
+        self.WindUp = WindUp
+
+    @property
+    def act(self):
+        return self.__act
+
+    @act.setter
+    def act(self, value):
+        self.old = self.__act
+        self.__act = value
+
+    @property
+    def Intg(self):
+        return self.__Intg
+
+    @Intg.setter
+    def Intg(self, value):
+        _sum = self.__Intg + value
+        self.__Intg = _sum if abs(_sum) < self.WindUp else self.__Intg
+
+    @property
+    def Deri(self):
+        return self.__act - self.old
+
+
+class ErrorVector:
+    def __init__(self):
+        self.x = ErrorObj(WindUp=0.3)
+        self.y = ErrorObj(WindUp=0.3)
+        self.z = ErrorObj(WindUp=0.3)
+
+
+class FCUModes:
     def setTakeoff(self):
         rospy.wait_for_service('mavros/cmd/takeoff')
         try:
@@ -77,19 +143,18 @@ class fcuModes:
             print(f"Service arming call failed: {e}")
 
     def setMode(self, _mode):
-        if _mode in ("STABILIZED",
-                     "OFFBOARD",
-                     "ALTCTL",
-                     "POSCTL",
-                     "AUTO.LAND"):
-            rospy.wait_for_service('mavros/set_mode')
-            try:
-                flightModeService = rospy.ServiceProxy('mavros/set_mode', mavros_msgs.srv.SetMode)
-                while not state.mode == _mode:
-                    flightModeService(custom_mode = _mode)
-                    rate.sleep()
-            except rospy.ServiceException as e:
-                print(f"service set_mode call failed: {e}. Offboard Mode could not be set.")
+        if _mode not in ALLOWED_FLIGHT_MODES:
+            rospy.logwarn(f"Mode {_mode} is not supported")
+            return
+
+        rospy.wait_for_service('mavros/set_mode')
+        try:
+            flightModeService = rospy.ServiceProxy('mavros/set_mode', mavros_msgs.srv.SetMode)
+            while state.mode != _mode:
+                flightModeService(custom_mode = _mode)
+                rate.sleep()
+        except rospy.ServiceException as e:
+            print(f"service set_mode call failed: {e}. Offboard Mode could not be set.")
 
 class SetpointPosition:
     def init(self, _x, _y, _z):
@@ -107,11 +172,8 @@ class SetpointPosition:
 
     def start(self):
         self.activated = True
-
-        try:
-            thread.start_new_thread(self.navigate_position, ())
-        except:
-            fault("Error: Unable to start thread")
+        self._nav_thread = threading.Thread(target=self.navigate_position, daemon=True)
+        self._nav_thread.start()
 
     def finish(self):
         self.activated = False
@@ -204,62 +266,18 @@ class SetpointVelocity:
     def start(self):
         self.activated = True
         self.fuzzyfy = False
-
-        class Fuzzy_diff:
-            def __init__(self):
-                self.P_X = 0
-                self.I_X = 0
-                self.D_X = 0
-                self.P_Y = 0
-                self.I_Y = 0
-                self.D_Y = 0
-                self.P_Z = 0
-                self.I_Z = 0
-                self.D_Z = 0
-
-        class ErrorObj(object):
-            def __init__(self, InitValue=0, WindUp=5.0):
-                self.__act = InitValue
-                self.old = InitValue
-                self.__Intg = 0
-                self.WindUp = WindUp
-
-            @property
-            def act(self):
-                return self.__act
-
-            @act.setter
-            def act(self, value):
-                self.old = self.__act
-                self.__act = value
-
-            @property
-            def Intg(self):
-                return self.__Intg
-
-            @Intg.setter
-            def Intg(self, value):
-                _sum = self.__Intg + value
-                self.__Intg = _sum if abs(_sum) < self.WindUp else self.__Intg
-
-            @property
-            def Deri(self):
-                return self.__act - self.old
-
-        class ErrorVector():
-            def __init__(self):
-                self.x = ErrorObj(WindUp=0.3)
-                self.y = ErrorObj(WindUp=0.3)
-                self.z = ErrorObj(WindUp=0.3)
-
         self.error = ErrorVector()
+        self.defuzzed = FuzzyDiff()
 
-        self.defuzzed = Fuzzy_diff()
+        self._pid_thread = threading.Thread(target=self.control_pid, daemon=True)
+        self._pid_thread.start()
 
-        try:
-            thread.start_new_thread(self.control_pid, ())
-        except:
-            fault("Error: Unable to start thread")
+    def _apply_fuzzy_gain_updates(self):
+        global KPx, KIx, KDx
+
+        KPx = clamp(KPx + self.defuzzed.P_X / SOFTNESS, 0.6, 5.6)
+        KIx = clamp(KIx + self.defuzzed.I_X / SOFTNESS, 0.3, 4.5)
+        KDx = clamp(KDx + self.defuzzed.D_X / SOFTNESS, 0.1, 0.8)
 
     def activate_fuzzy(self):
         rospy.loginfo("initalized fuzzyfication")
@@ -313,18 +331,7 @@ class SetpointVelocity:
                 if not self.defuzzed.P_X == 0:
                     rospy.loginfo_once("first value of P_X modified by fuzzy system")
                     rospy.loginfo_once(f"P_x = {str(self.defuzzed.P_X)}")
-                global KPx
-                KPx += self.defuzzed.P_X/SOFTNESS
-                if KPx <= 0.6: KPx = 0.6
-                if KPx >= 5.6: KPx = 5.6
-                global KIx
-                KIx += self.defuzzed.I_X/SOFTNESS
-                if KIx <= 0.3: KIx = 0.3
-                if KIx >= 4.5: KIx = 4.5
-                global KDx
-                KDx += self.defuzzed.D_X/SOFTNESS
-                if KDx <= 0.1: KDx = 0.1
-                if KDx >= 0.8: KDx = 0.8
+                self._apply_fuzzy_gain_updates()
 
             self.error.x.act = self.x - DronePose.x
             self.error.y.act = self.y - DronePose.y
@@ -430,7 +437,7 @@ def stateCb2(msg):
 
 DronePose = DronePosition()
 DroneVel = DroneVelocity()
-modes = fcuModes()
+modes = FCUModes()
 setpoint_pos = SetpointPosition()
 setpoint_vel = SetpointVelocity()
 
@@ -631,7 +638,7 @@ if __name__ == '__main__':
             pointSize = 10
             point = graph.draw_point([0, 0], pointSize, color='green')
 
-            while(True):
+            while True:
                 try:
                     event, values = window.Read(timeout=100)
                     # print(event, values)
@@ -669,10 +676,10 @@ if __name__ == '__main__':
                     if event == 'DEACTIVATE_FUZZY':
                         setpoint_vel.deactivate_fuzzy()
 
-                    if not event == u'__TIMEOUT__':
+                    if event != u'__TIMEOUT__':
                         # print(event, values)
                         _x, _y = values["graph"]
-                        if not _x == None:
+                        if _x is not None:
                             # move setpoint on graph
                             graph.RelocateFigure(point, _x - pointSize, _y + pointSize)
 
